@@ -2,60 +2,59 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 type ItemLista = { id: string; monto: number; referencia: string };
-
-const ATENDEDORES = [
-  { id: "1", nombre: "Iván" },
-  { id: "2", nombre: "Mauricio" },
-  { id: "3", nombre: "Dayrishell" },
-];
+// Definimos el tipo para el empleado
+type Empleado = { id: string; nombre: string };
 
 export default function NuevaCuadraturaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  // ESTADO PARA LA LISTA DE ATENDEDORES
+  const [listaAtendedores, setListaAtendedores] = useState<Empleado[]>([]);
 
   // 1. DATOS
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [turno, setTurno] = useState("mañana");
   const [responsable, setResponsable] = useState("");
 
+  // ... (Tus otros estados: ventaCombustible, vouchers, gastos, etc. siguen IGUAL) ...
+  // [CÓDIGO OMITIDO POR BREVEDAD - MANTÉN TUS ESTADOS ANTERIORES AQUÍ]
   // 2. INGRESOS
   const [ventaCombustible, setVentaCombustible] = useState<number | "">(""); 
   const [ventaTienda, setVentaTienda] = useState<number | "">(""); 
-  
-  // 3. VOUCHERS LISTA
   const [vouchers, setVouchers] = useState<ItemLista[]>([{ id: "1", monto: 0, referencia: "" }]);
-
-  // 4. GASTOS Y EGRESOS (Aquí agregamos los nuevos campos)
   const [gastos, setGastos] = useState({
-    anticipos: 0,        // <--- NUEVO
-    bencinaEnzo: 0,      // <--- NUEVO (Uso interno)
-    perrosMuertos: 0,    // <--- NUEVO (Fugas)
-    turnoExtra: 0,       // YA ESTABA
-    comisiones: 0,
-    tercerDomingo: 0,
-    cuartoDomingo: 0,
-    valeEasyPay: 0,
-    otros: 0,
+    anticipos: 0, bencinaEnzo: 0, perrosMuertos: 0, turnoExtra: 0,
+    comisiones: 0, tercerDomingo: 0, cuartoDomingo: 0, valeEasyPay: 0, otros: 0,
   });
-
-  // 5. TARJETAS
   const [totalTarjetas, setTotalTarjetas] = useState<number | "">("");
-
-  // 6. EFECTIVO REAL
   const [depositos, setDepositos] = useState<ItemLista[]>([{ id: "1", monto: 0, referencia: "" }]);
-
-  // TOTALES
   const [calculos, setCalculos] = useState({
-    totalVentas: 0,
-    totalNoEfectivo: 0,
-    efectivoEsperado: 0,
-    efectivoReal: 0,
-    diferencia: 0,
+    totalVentas: 0, totalNoEfectivo: 0, efectivoEsperado: 0, efectivoReal: 0, diferencia: 0,
   });
 
+  // --- EFECTO 1: CARGAR ATENDEDORES AL INICIO ---
   useEffect(() => {
+    const cargarPersonal = async () => {
+      const { data, error } = await supabase
+        .from('personal')
+        .select('id, nombre')
+        .eq('activo', true) // Solo los activos
+        .order('nombre');
+      
+      if (!error && data) {
+        setListaAtendedores(data);
+      }
+    };
+    cargarPersonal();
+  }, []);
+
+  // --- EFECTO 2: CÁLCULOS (Tu lógica anterior) ---
+  useEffect(() => {
+    // ... (MANTÉN TU LÓGICA DE CÁLCULO ACTUAL AQUÍ) ...
     const sumVentas = (Number(ventaCombustible) || 0) + (Number(ventaTienda) || 0);
     const sumVouchers = vouchers.reduce((acc, item) => acc + (item.monto || 0), 0);
     const sumGastos = Object.values(gastos).reduce((acc, val) => acc + (Number(val) || 0), 0);
@@ -69,6 +68,7 @@ export default function NuevaCuadraturaPage() {
     setCalculos({ totalVentas: sumVentas, totalNoEfectivo, efectivoEsperado, efectivoReal: sumDepositos, diferencia });
   }, [ventaCombustible, ventaTienda, vouchers, gastos, totalTarjetas, depositos]);
 
+  // ... (Tus handlers addRow, removeRow, etc. siguen IGUAL) ...
   const addRow = (setter: any) => setter((prev: any) => [...prev, { id: crypto.randomUUID(), monto: 0, referencia: "" }]);
   const removeRow = (setter: any, id: string) => setter((prev: any) => prev.length > 1 ? prev.filter((i: any) => i.id !== id) : prev);
   const updateRow = (setter: any, id: string, field: string, val: any) => setter((prev: any) => prev.map((i: any) => i.id === id ? { ...i, [field]: val } : i));
@@ -77,10 +77,40 @@ export default function NuevaCuadraturaPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!responsable) { alert("⚠️ Selecciona un responsable"); return; }
+    
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log("Guardado", { responsable, fecha, calculos });
-    router.push("/dashboard");
+
+    try {
+      // PREPARAR DATOS
+      const datosParaGuardar = {
+        fecha,
+        turno,
+        responsable, // Aquí guardamos el nombre (o podrías guardar el ID si prefieres relacionarlo)
+        venta_combustible: Number(ventaCombustible) || 0,
+        venta_tienda: Number(ventaTienda) || 0,
+        vouchers,
+        gastos,
+        depositos,
+        total_tarjetas: Number(totalTarjetas) || 0,
+        total_ventas: calculos.totalVentas,
+        total_no_efectivo: calculos.totalNoEfectivo,
+        efectivo_esperado: calculos.efectivoEsperado,
+        efectivo_real: calculos.efectivoReal,
+        diferencia: calculos.diferencia
+      };
+
+      const { error } = await supabase.from('turnos').insert([datosParaGuardar]);
+      if (error) throw error;
+
+      alert("✅ Turno cerrado correctamente");
+      router.push("/dashboard/cuadraturas");
+
+    } catch (error: any) {
+      console.error(error);
+      alert("Error: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,15 +121,24 @@ export default function NuevaCuadraturaPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 1. DATOS */}
+        {/* 1. DATOS (ACTUALIZADO CON SELECTOR DINÁMICO) */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-bold mb-1">Responsable <span className="text-red-500">*</span></label>
-              <select value={responsable} onChange={e => setResponsable(e.target.value)} className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700">
-                <option value="">-- Seleccionar --</option>
-                {ATENDEDORES.map(at => <option key={at.id} value={at.nombre}>{at.nombre}</option>)}
+              
+              {/* SELECTOR QUE USA LA LISTA DE SUPABASE */}
+              <select 
+                value={responsable} 
+                onChange={e => setResponsable(e.target.value)} 
+                className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700"
+              >
+                <option value="">-- Seleccionar Atendedor --</option>
+                {listaAtendedores.map(at => (
+                    <option key={at.id} value={at.nombre}>{at.nombre}</option>
+                ))}
               </select>
+
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Fecha</label>
@@ -116,23 +155,30 @@ export default function NuevaCuadraturaPage() {
           </div>
         </div>
 
-        {/* 2. VENTAS */}
+        {/* ... (EL RESTO DEL FORMULARIO SIGUE EXACTAMENTE IGUAL) ... */}
+        {/* COPIA AQUÍ EL RESTO DE TU CÓDIGO ANTERIOR (Ventas, Gastos, Tarjetas, Footer...) */}
+        
+        {/* SOLO PARA REFERENCIA, MANTÉN LAS SECCIONES DE ABAJO */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-          <h2 className="text-xs font-bold text-teal-600 uppercase mb-4">1. Ventas Totales</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Venta Combustibles</label>
-              <input type="number" placeholder="$ 0" value={ventaCombustible} onChange={e => setVentaCombustible(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Venta Tienda</label>
-              <input type="number" placeholder="$ 0" value={ventaTienda} onChange={e => setVentaTienda(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700" />
-            </div>
-          </div>
+             {/* ... sección ventas ... */}
+             <h2 className="text-xs font-bold text-teal-600 uppercase mb-4">1. Ventas Totales</h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div>
+                  <label className="block text-sm font-medium mb-1">Venta Combustibles</label>
+                  <input type="number" placeholder="$ 0" value={ventaCombustible} onChange={e => setVentaCombustible(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700" />
+               </div>
+               <div>
+                  <label className="block text-sm font-medium mb-1">Venta Tienda</label>
+                  <input type="number" placeholder="$ 0" value={ventaTienda} onChange={e => setVentaTienda(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700" />
+               </div>
+             </div>
         </div>
 
+        {/* ... (Agrega aquí el resto de secciones: Vouchers, Gastos, Tarjetas, Efectivo y la Barra Inferior) ... */}
+        {/* Si quieres te paso el código completo de nuevo con esto integrado, pero es básicamente lo mismo de arriba + los campos anteriores */}
+        
+        {/* --- INICIO BLOQUE GASTOS (PARA QUE VEAS QUE SIGUE AHÍ) --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 3. VOUCHERS */}
             <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <h2 className="text-xs font-bold text-blue-600 uppercase mb-4">2. Vouchers / ShellCard</h2>
                 <div className="space-y-2">
@@ -147,11 +193,9 @@ export default function NuevaCuadraturaPage() {
                 </div>
             </div>
 
-            {/* 4. GASTOS (ACTUALIZADO CON TUS REQUERIMIENTOS) */}
             <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <h2 className="text-xs font-bold text-red-600 uppercase mb-4">3. Gastos, Egresos y Pérdidas</h2>
                 <div className="space-y-3">
-                    {/* Items Críticos */}
                     <div className="grid grid-cols-2 gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
                         <div>
                             <label className="block text-xs font-bold text-red-700 mb-1">Anticipos Personal</label>
@@ -171,7 +215,6 @@ export default function NuevaCuadraturaPage() {
                         </div>
                     </div>
 
-                    {/* Otros Gastos */}
                     <div className="grid grid-cols-2 gap-3 pt-2">
                         {Object.keys(gastos).filter(k => !['anticipos','perrosMuertos','bencinaEnzo','turnoExtra'].includes(k)).map((key) => (
                             <div key={key}>
@@ -184,7 +227,6 @@ export default function NuevaCuadraturaPage() {
             </div>
         </div>
 
-        {/* 5. TARJETAS */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <h2 className="text-xs font-bold text-indigo-600 uppercase mb-4">5. Tarjetas (Transbank)</h2>
           <div className="relative">
@@ -193,7 +235,6 @@ export default function NuevaCuadraturaPage() {
           </div>
         </div>
 
-        {/* 6. EFECTIVO REAL */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <h2 className="text-xs font-bold text-emerald-600 uppercase mb-4">6. Efectivo Real (Depósitos)</h2>
           <div className="space-y-2">
@@ -208,7 +249,6 @@ export default function NuevaCuadraturaPage() {
             </div>
         </div>
       
-        {/* BARRA INFERIOR */}
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-zinc-200 dark:border-zinc-800 p-4 shadow-xl z-20 lg:pl-72">
             <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
                 <div className="flex gap-6 text-sm">
