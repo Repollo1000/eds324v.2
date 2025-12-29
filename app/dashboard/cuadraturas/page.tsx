@@ -10,15 +10,42 @@ export default function CuadraturasPage() {
   const [loading, setLoading] = useState(true);
 
   // Cargar datos
+  const fetchTurnos = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('turnos')
+      .select('*')
+      .order('fecha', { ascending: false }); // Ordenar por fecha descendente
+    
+    if (!error) setTurnos(data || []);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchTurnos = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.from('turnos').select('*').order('fecha', { ascending: false });
-      if (!error) setTurnos(data || []);
-      setLoading(false);
-    };
     fetchTurnos();
   }, []);
+
+  // --- NUEVA FUNCIÓN: ELIMINAR TURNO ---
+  const eliminarTurno = async (id: string) => {
+    // 1. Preguntar confirmación para evitar accidentes
+    const confirmacion = window.confirm("¿Estás seguro de borrar este turno permanentemente? Esta acción no se puede deshacer.");
+    
+    if (!confirmacion) return;
+
+    // 2. Borrar de Supabase
+    const { error } = await supabase
+      .from('turnos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert("Error al eliminar: " + error.message);
+    } else {
+      // 3. Recargar la lista visualmente
+      alert("🗑️ Turno eliminado correctamente");
+      fetchTurnos(); // Recargamos los datos para que desaparezca de la tabla
+    }
+  };
 
   const datosFiltrados = turnos.filter(item => 
     item.responsable?.toLowerCase().includes(filtro.toLowerCase()) ||
@@ -71,7 +98,9 @@ export default function CuadraturasPage() {
                     {datosFiltrados.map((item) => (
                     <tr key={item.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition">
                         <td className="px-6 py-4">
-                            <p className="font-medium text-zinc-900 dark:text-zinc-100">{item.fecha}</p>
+                            <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                              {new Date(item.fecha).toLocaleDateString("es-CL", { timeZone: 'UTC' })}
+                            </p>
                             <p className="text-xs text-zinc-500 capitalize">{item.turno}</p>
                         </td>
                         <td className="px-6 py-4">
@@ -95,9 +124,24 @@ export default function CuadraturasPage() {
                             </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                            <Link href={`/dashboard/dia/${item.id}`} className="text-teal-600 hover:text-teal-800 font-medium hover:underline">
-                                Ver Detalle
-                            </Link>
+                            <div className="flex items-center justify-end gap-3">
+                              <Link href={`/dashboard/dia/${item.id}`} className="text-teal-600 hover:text-teal-800 font-medium hover:underline text-xs">
+                                  Ver Detalle
+                              </Link>
+                              
+                              {/* BOTÓN ELIMINAR */}
+                              <button 
+                                onClick={() => eliminarTurno(item.id)}
+                                className="text-red-400 hover:text-red-600 transition p-1 hover:bg-red-50 rounded"
+                                title="Eliminar turno"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M3 6h18"></path>
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
                         </td>
                     </tr>
                     ))}

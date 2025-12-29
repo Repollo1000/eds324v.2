@@ -1,118 +1,109 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError(null);
-
-    if (!email || !password) {
-      setError("Debes ingresar tu correo y contraseña");
-      return;
-    }
-
     setLoading(true);
 
-    // Simulación (para demo)
-    setTimeout(() => {
-      if (email !== "demo@shell.cl") {
-        setError("Usuario o contraseña incorrectos");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Si pasa, nos vamos al dashboard
+      router.push("/dashboard");
+      router.refresh(); // Refresca para asegurar que los datos carguen bien
+
+    } catch (err: any) {
+      if (err.message.includes("Invalid login credentials")) {
+        setError("Correo o contraseña incorrectos.");
       } else {
-        console.log("Login ok — redirige al dashboard");
+        setError("Error de conexión. Intenta nuevamente.");
       }
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-900 px-4">
+      
+      {/* Logo o Título */}
+      <div className="mb-8 text-center">
+        <div className="w-16 h-16 bg-teal-600 rounded-xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-teal-600/20">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        </div>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Acceso Administrativo</h1>
+        <p className="text-zinc-500 text-sm mt-1">Sistema de Control EDS</p>
+      </div>
 
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-black shadow-xl border border-zinc-200 dark:border-zinc-800 p-8">
-
-        <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-          Iniciar sesión
-        </h2>
-
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-          Accede al sistema de cuadraturas
-        </p>
-
+      <div className="w-full max-w-sm bg-white dark:bg-black p-8 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800">
+        
         {error && (
-          <div className="mb-4 text-sm bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border border-red-300 dark:border-red-800 rounded-lg px-3 py-2">
-            {error}
-          </div>
+            <div className="mb-6 p-3 rounded-lg bg-red-50 text-red-600 text-xs font-bold border border-red-100 flex items-center gap-2">
+                <span>🚫</span> {error}
+            </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Correo institucional
-            </label>
-
+            <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Correo Institucional</label>
             <input
               type="email"
               value={email}
-              autoComplete="email"
-              onChange={e => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="usuario@empresa.cl"
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-teal-500 outline-none transition"
+              placeholder="nombre@empresa.cl"
+              required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Contraseña
-            </label>
-
-            <div className="relative">
-              <input
-                type={showPass ? "text" : "password"}
-                value={password}
-                autoComplete="current-password"
-                onChange={e => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="••••••••"
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPass(v => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-800"
-              >
-                {showPass ? "Ocultar" : "Ver"}
-              </button>
-            </div>
+            <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-teal-500 outline-none transition"
+              placeholder="••••••••"
+              required
+            />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-medium py-2.5 transition"
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-teal-600/20 transition transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Ingresando..." : "Entrar"}
+            {loading ? "Verificando..." : "Iniciar Sesión"}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400 text-center">
-          ¿Olvidaste tu contraseña?
-          <span className="text-teal-600 dark:text-teal-400 cursor-pointer ml-1">
-            Recuperar acceso
-          </span>
-        </p>
-
-        <p className="mt-3 text-xs text-center text-zinc-400">
-          Acceso exclusivo personal autorizado
-        </p>
+        <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800 text-center">
+            <p className="text-xs text-zinc-400">
+                ¿Olvidaste tu clave o no tienes cuenta? <br/>
+                Contacta directamente a Administración.
+            </p>
+        </div>
       </div>
+      
+      <p className="mt-8 text-[10px] text-zinc-400 opacity-60">
+        © 2025 Sistema EDS v2.0 - Acceso Restringido
+      </p>
     </div>
   );
 }
