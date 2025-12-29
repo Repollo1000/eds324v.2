@@ -1,21 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   // Función auxiliar para saber si un link está activo
   const isActive = (path: string) => pathname === path;
 
+  // Función para cerrar sesión
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.replace("/login");
+  };
+
   return (
-    <aside className="w-64 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col h-screen sticky top-0">
+    // Mantenemos w-64 como en tu diseño
+    <aside className="w-64 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col h-screen sticky top-0 z-40">
       
       {/* HEADER DEL SIDEBAR */}
       <div className="p-6 border-b border-zinc-100 dark:border-zinc-900">
         <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-          <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white">
+          <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-teal-600/20">
             ⛽
           </div>
           EDS Control
@@ -23,7 +32,7 @@ export default function Sidebar() {
       </div>
 
       {/* NAVEGACIÓN */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
         
         {/* GRUPO 1: PRINCIPAL */}
         <div>
@@ -44,7 +53,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* GRUPO 2: OPERACIÓN (Aquí va "Nuevo Turno") */}
+        {/* GRUPO 2: OPERACIÓN */}
         <div>
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 px-2">
             Operación
@@ -53,7 +62,7 @@ export default function Sidebar() {
             <Link
               href="/dashboard/cuadraturas/nuevo"
               className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive("/dashboard/cuadraturas/nueva")
+                isActive("/dashboard/cuadraturas/nuevo")
                   ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
                   : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
               }`}
@@ -73,6 +82,7 @@ export default function Sidebar() {
             </Link>
           </div>
         </div>
+
         {/* GRUPO 3: ADMINISTRACIÓN */}
         <div>
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 px-2 mt-6">
@@ -89,34 +99,30 @@ export default function Sidebar() {
             >
               👥 Personal / Licencias
             </Link>
-          </div>
 
-
-              <Link
+            <Link
               href="/dashboard/pagos"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/dashboard/pagos")
+                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              }`}
             >
-              {/* Icono de Billete/Pago */}
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-medium text-sm">Pagos y Anticipos</span>
+              💸 Pagos y Anticipos
             </Link>
+          </div>
         </div>
-
       </nav>
 
-      {/* FOOTER DEL SIDEBAR (Usuario) */}
-      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold">
-            U
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-zinc-900 dark:text-zinc-100">Usuario</p>
-            <p className="text-xs text-zinc-500">Operador</p>
-          </div>
-        </div>
+      {/* FOOTER DEL SIDEBAR (Cerrar Sesión) */}
+      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50">
+        <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          Cerrar Sesión
+        </button>
       </div>
     </aside>
   );
