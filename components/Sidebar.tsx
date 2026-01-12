@@ -110,6 +110,18 @@ export default function Sidebar() {
             >
               💸 Pagos y Anticipos
             </Link>
+
+            {/* NUEVO ENLACE: LIQUIDACIONES */}
+            <Link
+              href="/dashboard/liquidaciones"
+              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/dashboard/liquidaciones")
+                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              }`}
+            >
+              📑 Liquidaciones
+            </Link>
           </div>
         </div>
       </nav>
