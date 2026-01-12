@@ -73,7 +73,9 @@ export default function LiquidacionesPage() {
         const [copiedPage] = await subPdf.copyPages(pdfDoc, [i]);
         subPdf.addPage(copiedPage);
         const pdfBytes = await subPdf.save();
-        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        
+        // CORRECCIÓN AQUÍ: Agregamos "as any" para evitar el error de TypeScript
+        const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
         
         let asignadoA = "";
         let infoDeteccion = "";
