@@ -1,20 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { PDFDocument } from "pdf-lib";
-import * as pdfjsLib from "pdfjs-dist";
 import { Eye, Send, UploadCloud, CheckCircle, Search, AlertTriangle, Loader2, Clock } from "lucide-react";
-// Importamos la memoria global (Asegúrate de tener el archivo store.ts creado)
-import { useLiquidacionesStore } from "./store"; 
-
-// Configuración del Worker para leer el PDF
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+import { useLiquidacionesStore } from "./store";
 
 export default function LiquidacionesPage() {
   const [personal, setPersonal] = useState<any[]>([]);
   // Usamos el store global en lugar de state local
   const { hojas, setHojas, actualizarHoja } = useLiquidacionesStore();
   
+  const prevUrlsRef = useRef<string[]>([]);
   const [procesando, setProcesando] = useState(false);
   const [enviandoId, setEnviandoId] = useState<number | null>(null);
   const [mes, setMes] = useState(new Date().getMonth() + 1);
@@ -24,6 +19,13 @@ export default function LiquidacionesPage() {
   useEffect(() => {
     supabase.from("personal").select("*").eq("activo", true).order("nombre")
       .then(({ data }) => setPersonal(data || []));
+  }, []);
+
+  // Cleanup Blob URLs when hojas change or on unmount
+  useEffect(() => {
+    return () => {
+      prevUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+    };
   }, []);
 
   // 2. PROTECCIÓN ANTI-RECARGA (F5)
@@ -41,66 +43,67 @@ export default function LiquidacionesPage() {
   // Utilidad para limpiar RUT y comparar
   const limpiarRut = (rut: string) => rut.replace(/\./g, "").replace(/-/g, "").toLowerCase().trim();
 
-  // Utilidad para leer texto de una página específica
-  const extraerTextoPagina = async (pdfDoc: PDFDocument, indicePagina: number) => {
-    try {
-      const subPdf = await PDFDocument.create();
-      const [copiedPage] = await subPdf.copyPages(pdfDoc, [indicePagina]);
-      subPdf.addPage(copiedPage);
-      const pdfBytes = await subPdf.save();
-      const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
-      const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1);
-      const textContent = await page.getTextContent();
-      return textContent.items.map((item: any) => item.str).join(" ");
-    } catch (e) { return ""; }
-  };
-
-  // 3. PROCESAR EL PDF (Corte + Detección)
+  // 3. PROCESAR EL PDF (Corte + Detección) — libs loaded on demand
   const procesarPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     setProcesando(true);
-    
+
     try {
+      // Dynamic imports — only loaded when user uploads a file
+      const { PDFDocument } = await import("pdf-lib");
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
       const fileBytes = await e.target.files[0].arrayBuffer();
       const pdfDoc = await PDFDocument.load(fileBytes);
       const totalPaginas = pdfDoc.getPageCount();
       const nuevasHojas: any[] = [];
       const rutRegex = /\b\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]\b/g;
 
+      // Revoke previous Blob URLs to prevent memory leak
+      prevUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      prevUrlsRef.current = [];
+
       for (let i = 0; i < totalPaginas; i++) {
         const subPdf = await PDFDocument.create();
         const [copiedPage] = await subPdf.copyPages(pdfDoc, [i]);
         subPdf.addPage(copiedPage);
         const pdfBytes = await subPdf.save();
-        
-        // CORRECCIÓN AQUÍ: Agregamos "as any" para evitar el error de TypeScript
+
         const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
-        
+        const previewUrl = URL.createObjectURL(blob);
+        prevUrlsRef.current.push(previewUrl);
+
         let asignadoA = "";
         let infoDeteccion = "";
-        
-        // Intentar detectar RUT
-        const textoPagina = await extraerTextoPagina(pdfDoc, i);
-        const rutsEncontrados = textoPagina.match(rutRegex) || [];
-        
-        for (const rutRaw of rutsEncontrados) {
-           const rutLimpio = limpiarRut(rutRaw);
-           const trabajador = personal.find(p => p.rut && limpiarRut(p.rut) === rutLimpio);
-           if (trabajador) {
-             asignadoA = trabajador.id;
-             infoDeteccion = "RUT detectado";
-             break;
-           }
-        }
+
+        // Extract text for RUT detection
+        try {
+          const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+          const pdf = await loadingTask.promise;
+          const page = await pdf.getPage(1);
+          const textContent = await page.getTextContent();
+          const textoPagina = textContent.items.map((item: any) => item.str).join(" ");
+          const rutsEncontrados = textoPagina.match(rutRegex) || [];
+
+          for (const rutRaw of rutsEncontrados) {
+             const rutLimpio = limpiarRut(rutRaw);
+             const trabajador = personal.find(p => p.rut && limpiarRut(p.rut) === rutLimpio);
+             if (trabajador) {
+               asignadoA = trabajador.id;
+               infoDeteccion = "RUT detectado";
+               break;
+             }
+          }
+        } catch { /* text extraction failed, continue */ }
 
         nuevasHojas.push({
           id: i,
-          blob: blob, // Guardamos el archivo en memoria RAM
-          previewUrl: URL.createObjectURL(blob),
-          asignadoA: asignadoA,
-          infoDeteccion: infoDeteccion,
-          estado: "no_enviado" // Estado inicial AMARILLO
+          blob,
+          previewUrl,
+          asignadoA,
+          infoDeteccion,
+          estado: "no_enviado"
         });
       }
       setHojas(nuevasHojas);

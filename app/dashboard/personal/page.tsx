@@ -21,6 +21,8 @@ type Personal = {
   rut: string | null;
   correo: string | null;
   activo: boolean;
+  rol: 'atendedor' | 'supervisor';
+  grupo: 'A' | 'B' | null;
   created_at: string;
 };
 
@@ -35,7 +37,9 @@ export default function PersonalPage() {
     nombre: "",
     rut: "",
     correo: "",
-    activo: true
+    activo: true,
+    rol: "atendedor" as 'atendedor' | 'supervisor',
+    grupo: "A" as 'A' | 'B' | null,
   });
 
   // Cargar datos al inicio
@@ -56,7 +60,7 @@ export default function PersonalPage() {
   // Abrir Modal para Crear
   const handleOpenCreate = () => {
     setEditingId(null);
-    setFormData({ nombre: "", rut: "", correo: "", activo: true });
+    setFormData({ nombre: "", rut: "", correo: "", activo: true, rol: "atendedor", grupo: "A" });
     setIsModalOpen(true);
   };
 
@@ -67,7 +71,9 @@ export default function PersonalPage() {
       nombre: persona.nombre,
       rut: persona.rut || "",
       correo: persona.correo || "",
-      activo: persona.activo
+      activo: persona.activo,
+      rol: persona.rol || "atendedor",
+      grupo: persona.rol === 'supervisor' ? null : (persona.grupo || "A"),
     });
     setIsModalOpen(true);
   };
@@ -81,7 +87,9 @@ export default function PersonalPage() {
       nombre: formData.nombre.trim(),
       rut: formData.rut.replace(/\./g, "").replace(/-/g, "").toLowerCase().trim(), // Limpiar RUT
       correo: formData.correo.trim(),
-      activo: formData.activo
+      activo: formData.activo,
+      rol: formData.rol,
+      grupo: formData.rol === 'supervisor' ? null : formData.grupo,
     };
 
     if (!dataToSave.nombre) return alert("El nombre es obligatorio");
@@ -102,9 +110,17 @@ export default function PersonalPage() {
         if (error) throw error;
       }
 
-      // Cerrar y refrescar
       setIsModalOpen(false);
-      fetchPersonal();
+
+      if (editingId) {
+        // Optimistic update for edit
+        setPersonal(prev =>
+          prev.map(p => p.id === editingId ? { ...p, ...dataToSave } : p)
+        );
+      } else {
+        // Re-fetch only after create (need the server-generated id)
+        fetchPersonal();
+      }
 
     } catch (error: any) {
       alert("Error al guardar: " + error.message);
@@ -113,8 +129,30 @@ export default function PersonalPage() {
 
   // Función "Soft Delete" (Desactivar en vez de borrar)
   const toggleEstado = async (id: string, estadoActual: boolean) => {
-    await supabase.from("personal").update({ activo: !estadoActual }).eq("id", id);
-    fetchPersonal();
+    // Optimistic update
+    setPersonal(prev =>
+      prev.map(p => p.id === id ? { ...p, activo: !estadoActual } : p)
+    );
+    const { error } = await supabase.from("personal").update({ activo: !estadoActual }).eq("id", id);
+    if (error) {
+      // Revert on failure
+      setPersonal(prev =>
+        prev.map(p => p.id === id ? { ...p, activo: estadoActual } : p)
+      );
+    }
+  };
+
+  // Eliminar permanentemente
+  const handleDelete = async (persona: Personal) => {
+    if (!confirm(`¿Eliminar a "${persona.nombre}" permanentemente?\n\nEsta acción no se puede deshacer. Se eliminarán también sus turnos generados.`)) return;
+    try {
+      const { error } = await supabase.from("personal").delete().eq("id", persona.id);
+      if (error) throw error;
+      // Optimistic removal
+      setPersonal(prev => prev.filter(p => p.id !== persona.id));
+    } catch (error: any) {
+      alert("Error al eliminar: " + error.message);
+    }
   };
 
   return (
@@ -141,19 +179,45 @@ export default function PersonalPage() {
               <th className="px-6 py-3 font-semibold">Nombre</th>
               <th className="px-6 py-3 font-semibold">RUT</th>
               <th className="px-6 py-3 font-semibold">Correo</th>
+              <th className="px-6 py-3 font-semibold text-center">Rol</th>
+              <th className="px-6 py-3 font-semibold text-center">Grupo</th>
               <th className="px-6 py-3 font-semibold text-center">Estado</th>
               <th className="px-6 py-3 font-semibold text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {loading ? (
-              <tr><td colSpan={5} className="p-8 text-center text-zinc-400">Cargando...</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-zinc-400">Cargando...</td></tr>
             ) : personal.map((p) => (
               <tr key={p.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
                 <td className="px-6 py-4 font-medium text-zinc-900 dark:text-white">{p.nombre}</td>
                 <td className="px-6 py-4 text-zinc-500 font-mono">{p.rut || "—"}</td>
                 <td className="px-6 py-4 text-zinc-500">{p.correo || <span className="text-red-400 text-xs font-bold">Falta Email</span>}</td>
-                
+
+                <td className="px-6 py-4 text-center">
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                    p.rol === 'supervisor'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                  }`}>
+                    {p.rol === 'supervisor' ? 'Supervisor' : 'Atendedor'}
+                  </span>
+                </td>
+
+                <td className="px-6 py-4 text-center">
+                  {p.rol === 'atendedor' ? (
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                      p.grupo === 'A'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    }`}>
+                      Grupo {p.grupo || '—'}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-400 text-xs">—</span>
+                  )}
+                </td>
+
                 <td className="px-6 py-4 text-center">
                   <button 
                     onClick={() => toggleEstado(p.id, p.activo)}
@@ -167,12 +231,18 @@ export default function PersonalPage() {
                   </button>
                 </td>
 
-                <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                  <button 
+                <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                  <button
                     onClick={() => handleOpenEdit(p)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition" title="Editar"
+                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition" title="Editar"
                   >
                     <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p)}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition" title="Eliminar"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </td>
               </tr>
@@ -243,6 +313,66 @@ export default function PersonalPage() {
                   />
                 </div>
               </div>
+
+              {/* Rol */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase">Rol</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, rol: "atendedor", grupo: formData.grupo || "A"})}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold border transition ${
+                      formData.rol === "atendedor"
+                        ? "bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100"
+                        : "bg-white text-zinc-500 border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                    }`}
+                  >
+                    Atendedor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, rol: "supervisor", grupo: null})}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold border transition ${
+                      formData.rol === "supervisor"
+                        ? "bg-purple-600 text-white border-purple-600"
+                        : "bg-white text-zinc-500 border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                    }`}
+                  >
+                    Supervisor
+                  </button>
+                </div>
+              </div>
+
+              {/* Grupo (solo para atendedores) */}
+              {formData.rol === "atendedor" && (
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 mb-1 uppercase">Grupo</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, grupo: "A"})}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold border transition ${
+                        formData.grupo === "A"
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-zinc-500 border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                      }`}
+                    >
+                      Grupo A
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, grupo: "B"})}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold border transition ${
+                        formData.grupo === "B"
+                          ? "bg-amber-600 text-white border-amber-600"
+                          : "bg-white text-zinc-500 border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                      }`}
+                    >
+                      Grupo B
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Checkbox Activo */}
               <div className="flex items-center gap-2 pt-2">

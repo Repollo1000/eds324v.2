@@ -4,138 +4,114 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Función auxiliar para saber si un link está activo
   const isActive = (path: string) => pathname === path;
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.replace("/login");
   };
 
+  const linkClass = (path: string) =>
+    `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+      isActive(path)
+        ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
+        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+    }`;
+
   return (
-    // Mantenemos w-64 como en tu diseño
-    <aside className="w-64 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col h-screen sticky top-0 z-40">
-      
-      {/* HEADER DEL SIDEBAR */}
-      <div className="p-6 border-b border-zinc-100 dark:border-zinc-900">
+    <div className="flex flex-col h-full">
+
+      {/* Header */}
+      <div className="h-14 flex items-center justify-between px-4 border-b border-zinc-100 dark:border-zinc-900 shrink-0">
         <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-          <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-teal-600/20">
+          <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-teal-600/20 text-sm">
             ⛽
           </div>
           EDS Control
         </h1>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors"
+          title="Cerrar menú"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
-      {/* NAVEGACIÓN */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-        
-        {/* GRUPO 1: PRINCIPAL */}
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+
+        {/* Principal */}
         <div>
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 px-2">
             Principal
           </p>
           <div className="space-y-1">
-            <Link
-              href="/dashboard"
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                pathname === "/dashboard"
-                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              }`}
-            >
+            <Link href="/dashboard" className={linkClass("/dashboard")} onClick={onClose}>
               📊 Resumen mensual
             </Link>
           </div>
         </div>
 
-        {/* GRUPO 2: OPERACIÓN */}
+        {/* Operación */}
         <div>
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 px-2">
             Operación
           </p>
           <div className="space-y-1">
-            <Link
-              href="/dashboard/cuadraturas/nuevo"
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive("/dashboard/cuadraturas/nuevo")
-                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              }`}
-            >
+            <Link href="/dashboard/cuadraturas/nuevo" className={linkClass("/dashboard/cuadraturas/nuevo")} onClick={onClose}>
               ➕ Nueva Cuadratura
             </Link>
-            
-            <Link
-              href="/dashboard/cuadraturas"
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive("/dashboard/cuadraturas")
-                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              }`}
-            >
+            <Link href="/dashboard/turnos" className={linkClass("/dashboard/turnos")} onClick={onClose}>
+              📅 Generador de Turnos
+            </Link>
+            <Link href="/dashboard/cuadraturas" className={linkClass("/dashboard/cuadraturas")} onClick={onClose}>
               📋 Historial de Turnos
             </Link>
           </div>
         </div>
 
-        {/* GRUPO 3: ADMINISTRACIÓN */}
+        {/* Administración */}
         <div>
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 px-2 mt-6">
+          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3 px-2">
             Administración
           </p>
           <div className="space-y-1">
-            <Link
-              href="/dashboard/personal"
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive("/dashboard/personal")
-                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              }`}
-            >
+            <Link href="/dashboard/personal" className={linkClass("/dashboard/personal")} onClick={onClose}>
               👥 Personal / Licencias
             </Link>
-
-            <Link
-              href="/dashboard/pagos"
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive("/dashboard/pagos")
-                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              }`}
-            >
+            <Link href="/dashboard/pagos" className={linkClass("/dashboard/pagos")} onClick={onClose}>
               💸 Pagos y Anticipos
             </Link>
-
-            {/* NUEVO ENLACE: LIQUIDACIONES */}
-            <Link
-              href="/dashboard/liquidaciones"
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive("/dashboard/liquidaciones")
-                  ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              }`}
-            >
+            <Link href="/dashboard/liquidaciones" className={linkClass("/dashboard/liquidaciones")} onClick={onClose}>
               📑 Liquidaciones
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* FOOTER DEL SIDEBAR (Cerrar Sesión) */}
-      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50">
-        <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
+      {/* Footer */}
+      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
           Cerrar Sesión
         </button>
       </div>
-    </aside>
+    </div>
   );
 }

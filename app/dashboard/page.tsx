@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import * as XLSX from "xlsx";
+import type * as XLSXType from "xlsx";
 
 export default function DashboardPage() {
   const [mes, setMes] = useState(new Date().toISOString().slice(0, 7)); // "YYYY-MM"
@@ -43,8 +43,6 @@ export default function DashboardPage() {
       // Truco: día 0 del mes siguiente es el último día del mes actual
       const lastDay = new Date(year, month, 0).getDate();
       const endDate = `${yearStr}-${monthStr}-${lastDay}`;
-
-      console.log("📅 Buscando datos entre:", startDate, "y", endDate);
 
       // 1. CONSULTA DB
       const promiseTurnos = supabase.from("turnos").select("*").gte("fecha", startDate).lte("fecha", endDate).order('fecha');
@@ -136,7 +134,9 @@ export default function DashboardPage() {
     cargarResumen();
   }, [mes]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const XLSX = await import("xlsx");
+
     const datosOperativos = rawTurnos.map(t => ({
         Fecha: t.fecha,
         Turno: t.turno,
@@ -167,6 +167,7 @@ export default function DashboardPage() {
   };
 
   const money = (val: number) => val.toLocaleString("es-CL", { style: "currency", currency: "CLP" });
+  const maxVenta = Math.max(...graficoVentas.map(d => d.monto), 1);
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
@@ -223,7 +224,6 @@ export default function DashboardPage() {
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-6">Tendencia de Ventas Diaria</h3>
             <div className="h-48 flex items-end gap-2 min-w-[600px] pb-2">
                 {graficoVentas.map((dato) => {
-                    const maxVenta = Math.max(...graficoVentas.map(d => d.monto), 1);
                     const porcentaje = (dato.monto / maxVenta) * 100;
                     
                     // Aseguramos que si hay venta, se vea al menos un 5% de altura

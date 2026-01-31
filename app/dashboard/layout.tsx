@@ -11,7 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
@@ -23,53 +23,55 @@ export default function DashboardLayout({
     checkSession();
   }, [router]);
 
-  if (!isAuthorized) return null; 
+  if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 relative flex">
-      
-      {/* 1. SIDEBAR */}
-      <div 
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-black border-r border-zinc-200 dark:border-zinc-800 transition-transform duration-300 ease-in-out ${
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+
+      {/* Overlay (mobile only, when sidebar is open) */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <Sidebar />
-      </div>
+        <Sidebar onClose={() => setSidebarOpen(false)} />
+      </aside>
 
-      {/* 2. BOTÓN DE TOGGLE (MEJORADO) */}
-      {/* - CERRADO: left-4 (Esquina flotante)
-          - ABIERTO: left-52 (DENTRO del Sidebar, a la derecha). 
-            * w-64 son aprox 16rem. left-52 son 13rem. 
-            * Queda dentro de la barra blanca, lejos del logo y lejos del contenido.
-      */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className={`fixed top-4 z-50 p-2 rounded-lg transition-all duration-300 ease-in-out ${
-          sidebarOpen 
-            ? "left-52 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400" // Estilo sutil (X) dentro del menú
-            : "left-4 bg-white dark:bg-zinc-950 shadow-md border border-zinc-200 dark:border-zinc-800 text-zinc-600" // Estilo botón (Hamburguesa) flotante
-        }`}
-        title={sidebarOpen ? "Ocultar menú" : "Mostrar menú"}
-      >
-        {sidebarOpen ? (
-          // Icono X
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-        ) : (
-          // Icono Hamburguesa
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-        )}
-      </button>
-
-      {/* 3. CONTENIDO PRINCIPAL */}
-      <div 
-        className={`flex-1 transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "ml-64" : "ml-0"
+      {/* Main wrapper: shifts on desktop when sidebar open */}
+      <div
+        className={`flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "lg:ml-64" : "ml-0"
         }`}
       >
-        {children}
+        {/* Top bar */}
+        <header className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 h-14 flex items-center px-4 gap-3 shrink-0">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 -ml-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 transition-colors"
+            title={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 lg:hidden">
+            EDS Control
+          </span>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1">
+          {children}
+        </main>
       </div>
-      
     </div>
   );
 }

@@ -1,36 +1,77 @@
 // app/api/enviar-liquidacion/route.ts
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { createSupabaseServer } from "@/lib/supabase-server";
+
+// Max file size: 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+// Basic email regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Strip control characters and newlines to prevent header injection
+function sanitize(input: string): string {
+  return input.replace(/[\r\n\t\x00-\x1f]/g, '').trim().slice(0, 200);
+}
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as Blob;
-    const email = formData.get("email") as string;
-    const nombre = formData.get("nombre") as string;
-    const mes = formData.get("mes") as string;
+    // Auth check (middleware also blocks, this is defense-in-depth)
+    const supabase = await createSupabaseServer();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
-    if (!file || !email) return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+    const formData = await request.formData();
+    const file = formData.get("file") as Blob | null;
+    const email = formData.get("email") as string | null;
+    const nombre = formData.get("nombre") as string | null;
+    const mes = formData.get("mes") as string | null;
+
+    // Validate required fields
+    if (!file || !email || !nombre || !mes) {
+      return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
+    }
+
+    // Validate email format
+    if (!EMAIL_REGEX.test(email)) {
+      return NextResponse.json({ error: "Formato de email inválido" }, { status: 400 });
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: "El archivo excede el tamaño máximo de 5MB" }, { status: 400 });
+    }
+
+    // Validate file type (only PDF)
+    if (file.type !== "application/pdf") {
+      return NextResponse.json({ error: "Solo se permiten archivos PDF" }, { status: 400 });
+    }
+
+    // Sanitize text inputs to prevent header injection
+    const safeNombre = sanitize(nombre);
+    const safeMes = sanitize(mes);
+    const safeEmail = email.trim();
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // CONFIGURA AQUÍ TU CORREO REAL
     const transporter = nodemailer.createTransport({
-      service: "gmail", // O tu proveedor SMTP
+      service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS, 
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
     await transporter.sendMail({
-      from: '"Recursos Humanos" <tu_email@empresa.com>',
-      to: email,
-      subject: `Liquidación de Sueldo - ${mes}`,
-      text: `Hola ${nombre}, adjunto enviamos tu liquidación de sueldo correspondiente a ${mes}.`,
+      from: `"Recursos Humanos" <${process.env.EMAIL_USER}>`,
+      to: safeEmail,
+      subject: `Liquidación de Sueldo - ${safeMes}`,
+      text: `Hola ${safeNombre}, adjunto enviamos tu liquidación de sueldo correspondiente a ${safeMes}.`,
       attachments: [
         {
-          filename: `Liquidacion_${nombre}.pdf`,
+          filename: `Liquidacion_${safeNombre.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ0-9_\- ]/g, '')}.pdf`,
           content: buffer,
           contentType: "application/pdf",
         },
@@ -38,7 +79,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("Error enviando liquidación:", error);
+    return NextResponse.json(
+      { error: "Error al enviar el correo. Intente nuevamente." },
+      { status: 500 }
+    );
   }
 }
