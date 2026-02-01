@@ -68,7 +68,14 @@ export async function POST(request: Request) {
       from: `"Recursos Humanos" <${process.env.EMAIL_USER}>`,
       to: safeEmail,
       subject: `Liquidación de Sueldo - ${safeMes}`,
-      text: `Hola ${safeNombre}, adjunto enviamos tu liquidación de sueldo correspondiente a ${safeMes}.`,
+      text: `Esperando que se encuentre bien ${safeNombre},
+
+    Adjunto enviamos su liquidación de sueldo correspondiente a ${safeMes}.
+
+    Saludos cordiales,
+    Recursos Humanos
+    EDS 324
+    Avda. Presidente Jorge Alessandri 26517, San Bernardo`,
       attachments: [
         {
           filename: `Liquidacion_${safeNombre.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ0-9_\- ]/g, '')}.pdf`,

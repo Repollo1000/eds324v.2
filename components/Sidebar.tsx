@@ -88,13 +88,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </p>
           <div className="space-y-1">
             <Link href="/dashboard/personal" className={linkClass("/dashboard/personal")} onClick={onClose}>
-              👥 Personal / Licencias
+              👥 Personal
+            </Link>
+            <Link href="/dashboard/ausencias" className={linkClass("/dashboard/ausencias")} onClick={onClose}>
+              🏥 Ausencias y Licencias
             </Link>
             <Link href="/dashboard/pagos" className={linkClass("/dashboard/pagos")} onClick={onClose}>
               💸 Pagos y Anticipos
             </Link>
             <Link href="/dashboard/liquidaciones" className={linkClass("/dashboard/liquidaciones")} onClick={onClose}>
               📑 Liquidaciones
+            </Link>
+            <Link href="/dashboard/importar" className={linkClass("/dashboard/importar")} onClick={onClose}>
+              📤 Importar Excel
             </Link>
           </div>
         </div>

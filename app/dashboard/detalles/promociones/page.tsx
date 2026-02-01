@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useMesFiltro } from "@/lib/useMesFiltro";
 import Link from "next/link";
 
 export default function DetallePromocionesPage() {
   const router = useRouter();
   const [movimientos, setMovimientos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mes, setMes] = useState(new Date().toISOString().slice(0, 7));
+  const [mes, setMes] = useMesFiltro();
   const [totalMes, setTotalMes] = useState(0);
 
   useEffect(() => {

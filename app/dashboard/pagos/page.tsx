@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useMesFiltro } from "@/lib/useMesFiltro";
 
 type Empleado = { id: string; nombre: string };
 type Pago = {
@@ -19,7 +20,7 @@ export default function PagosPage() {
   const [pagos, setPagos] = useState<Pago[]>([]);
   
   // Filtro de mes para la lista
-  const [mes, setMes] = useState(new Date().toISOString().slice(0, 7));
+  const [mes, setMes] = useMesFiltro();
 
   // Formulario
   const [personalId, setPersonalId] = useState("");

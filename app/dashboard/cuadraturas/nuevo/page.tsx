@@ -36,9 +36,10 @@ export default function NuevaCuadraturaPage() {
     horasExtras: 0,
     comisionesPromocion: 0,
     comisionesLubricantes: 0,
-    tercerDomingo: 0, 
-    cuartoDomingo: 0, 
-    valeEasyPay: 0, 
+    tercerDomingo: 0,
+    cuartoDomingo: 0,
+    quintoDomingo: 0,
+    valeEasyPay: 0,
     otros: 0,
   });
 

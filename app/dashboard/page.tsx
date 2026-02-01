@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useMesFiltro } from "@/lib/useMesFiltro";
 import type * as XLSXType from "xlsx";
 
 export default function DashboardPage() {
-  const [mes, setMes] = useState(new Date().toISOString().slice(0, 7)); // "YYYY-MM"
+  const [mes, setMes] = useMesFiltro();
   const [loading, setLoading] = useState(true);
   
   // Datos crudos
