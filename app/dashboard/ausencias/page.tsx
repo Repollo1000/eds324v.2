@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useMesFiltro } from "@/lib/useMesFiltro";
+import { useMesFiltro, getFechaRango } from "@/lib/useMesFiltro";
 import Link from "next/link";
+import { toast } from "@/lib/toast";
+import ConfirmModal from "@/components/ConfirmModal";
+import MonthPicker from "@/components/MonthPicker";
 
 type Empleado = { id: string; nombre: string };
 type Ausencia = {
@@ -23,7 +26,7 @@ export default function AusenciasPage() {
   const [ausencias, setAusencias] = useState<Ausencia[]>([]);
 
   // Filtro de mes
-  const [mes, setMes] = useMesFiltro();
+  const [mes, setMes, isReady] = useMesFiltro();
 
   // Formulario
   const [personalId, setPersonalId] = useState("");
@@ -33,8 +36,13 @@ export default function AusenciasPage() {
   const [reemplazo, setReemplazo] = useState("");
   const [observaciones, setObservaciones] = useState("");
 
+  // Modal confirmación
+  const [confirmModal, setConfirmModal] = useState<{ id: string } | null>(null);
+
   // Cargar empleados y ausencias
   useEffect(() => {
+    if (!isReady) return;
+
     const fetchData = async () => {
       const { data: personalData } = await supabase
         .from("personal")
@@ -46,13 +54,10 @@ export default function AusenciasPage() {
       fetchAusencias();
     };
     fetchData();
-  }, [mes]);
+  }, [mes, isReady]);
 
   const fetchAusencias = async () => {
-    const [year, month] = mes.split("-");
-    const startDate = `${year}-${month}-01`;
-    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    const endDate = `${year}-${month}-${lastDay}`;
+    const { startDate, endDate } = getFechaRango(mes);
 
     const { data } = await supabase
       .from("ausencias")
@@ -68,7 +73,7 @@ export default function AusenciasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!personalId) {
-      alert("Selecciona un trabajador");
+      toast.warning("Selecciona un trabajador", "Este campo es obligatorio");
       return;
     }
 
@@ -86,8 +91,9 @@ export default function AusenciasPage() {
     ]);
 
     if (error) {
-      alert("Error: " + error.message);
+      toast.error("Error al guardar", error.message);
     } else {
+      toast.success("Ausencia registrada", "El registro fue guardado correctamente");
       setDias("1");
       setObservaciones("");
       setReemplazo("");
@@ -97,10 +103,20 @@ export default function AusenciasPage() {
   };
 
   // Eliminar
-  const handleEliminar = async (id: string) => {
-    if (!confirm("¿Eliminar este registro?")) return;
-    const { error } = await supabase.from("ausencias").delete().eq("id", id);
-    if (!error) fetchAusencias();
+  const confirmarEliminar = (id: string) => {
+    setConfirmModal({ id });
+  };
+
+  const handleEliminar = async () => {
+    if (!confirmModal) return;
+    const { error } = await supabase.from("ausencias").delete().eq("id", confirmModal.id);
+    if (!error) {
+      toast.success("Registro eliminado", "La ausencia fue borrada del sistema");
+      fetchAusencias();
+    } else {
+      toast.error("Error al eliminar", error.message);
+    }
+    setConfirmModal(null);
   };
 
   const totalAusencias = ausencias.filter((a) => a.tipo === "ausencia").length;
@@ -257,12 +273,7 @@ export default function AusenciasPage() {
             <span className="font-bold text-zinc-700 dark:text-zinc-300">
               Registros del Mes
             </span>
-            <input
-              type="month"
-              value={mes}
-              onChange={(e) => setMes(e.target.value)}
-              className="bg-transparent font-medium text-zinc-600 focus:outline-none"
-            />
+            <MonthPicker value={mes} onChange={setMes} />
           </div>
 
           {/* Tabla */}
@@ -327,7 +338,7 @@ export default function AusenciasPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
-                          onClick={() => handleEliminar(a.id)}
+                          onClick={() => confirmarEliminar(a.id)}
                           className="text-red-400 hover:text-red-600 p-1"
                           title="Eliminar"
                         >
@@ -361,6 +372,16 @@ export default function AusenciasPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!confirmModal}
+        onConfirm={handleEliminar}
+        onCancel={() => setConfirmModal(null)}
+        title="Eliminar registro"
+        message="¿Estás seguro de eliminar este registro de ausencia?"
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

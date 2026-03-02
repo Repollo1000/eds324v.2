@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, memo, Fragment } from "react";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/lib/toast";
 import {
   Calendar,
   Users,
@@ -275,7 +276,7 @@ export default function TurnosPage() {
 
       setPageState("saved");
     } catch (error: any) {
-      alert("Error al guardar: " + error.message);
+      toast.error("Error al guardar", error.message);
     } finally {
       setSaving(false);
     }

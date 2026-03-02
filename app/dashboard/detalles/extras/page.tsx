@@ -3,23 +3,23 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useMesFiltro } from "@/lib/useMesFiltro";
+import { useMesFiltro, getFechaRango } from "@/lib/useMesFiltro";
 import Link from "next/link";
+import MonthPicker from "@/components/MonthPicker";
 
 export default function DetalleExtrasPage() {
   const router = useRouter();
   const [movimientos, setMovimientos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mes, setMes] = useMesFiltro();
+  const [mes, setMes, isReady] = useMesFiltro();
   const [totales, setTotales] = useState({ turnoExtra: 0, horasExtras: 0 });
 
   useEffect(() => {
+    if (!isReady) return;
+
     const fetchMovimientos = async () => {
       setLoading(true);
-      const [year, month] = mes.split("-");
-      const startDate = `${year}-${month}-01`;
-      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-      const endDate = `${year}-${month}-${lastDay}`;
+      const { startDate, endDate } = getFechaRango(mes);
 
       const { data, error } = await supabase
         .from('turnos')
@@ -49,7 +49,7 @@ export default function DetalleExtrasPage() {
     };
 
     fetchMovimientos();
-  }, [mes]);
+  }, [mes, isReady]);
 
   const formato = (v: number) => v.toLocaleString("es-CL", { style: "currency", currency: "CLP" });
 
@@ -63,10 +63,7 @@ export default function DetalleExtrasPage() {
                 Detalle Turnos y Horas Extras
             </h1>
         </div>
-        <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <span className="text-xs font-bold text-zinc-500 uppercase px-2">Periodo:</span>
-          <input type="month" value={mes} onChange={e => setMes(e.target.value)} className="bg-transparent text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none" />
-        </div>
+        <MonthPicker value={mes} onChange={setMes} />
       </div>
 
       {/* TARJETAS DE RESUMEN */}

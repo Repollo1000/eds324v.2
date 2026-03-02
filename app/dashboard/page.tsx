@@ -3,16 +3,28 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { useMesFiltro } from "@/lib/useMesFiltro";
+import { useMesFiltro, getFechaRango } from "@/lib/useMesFiltro";
+import MonthPicker from "@/components/MonthPicker";
+import ConfirmModal from "@/components/ConfirmModal";
+import { toast } from "@/lib/toast";
+import { Trash2 } from "lucide-react";
 import type * as XLSXType from "xlsx";
 
+const MESES_NOMBRES = [
+  "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+];
+
 export default function DashboardPage() {
-  const [mes, setMes] = useMesFiltro();
+  const [mes, setMes, isReady] = useMesFiltro();
   const [loading, setLoading] = useState(true);
-  
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   // Datos crudos
   const [rawTurnos, setRawTurnos] = useState<any[]>([]);
   const [rawPagos, setRawPagos] = useState<any[]>([]);
+  const [rawAusencias, setRawAusencias] = useState<any[]>([]);
 
   // Gráfico
   const [graficoVentas, setGraficoVentas] = useState<{dia: string, monto: number}[]>([]);
@@ -32,24 +44,23 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    if (!isReady) return;
+
     const cargarResumen = async () => {
       setLoading(true);
 
+      const { startDate, endDate } = getFechaRango(mes);
       const [yearStr, monthStr] = mes.split("-");
       const year = parseInt(yearStr);
       const month = parseInt(monthStr);
-
-      // Calcular primer y último día del mes
-      const startDate = `${yearStr}-${monthStr}-01`;
-      // Truco: día 0 del mes siguiente es el último día del mes actual
       const lastDay = new Date(year, month, 0).getDate();
-      const endDate = `${yearStr}-${monthStr}-${lastDay}`;
 
       // 1. CONSULTA DB
       const promiseTurnos = supabase.from("turnos").select("*").gte("fecha", startDate).lte("fecha", endDate).order('fecha');
       const promisePagos = supabase.from("pagos_personal").select("*").gte("fecha", startDate).lte("fecha", endDate).order('fecha');
+      const promiseAusencias = supabase.from("ausencias").select("*").gte("fecha", startDate).lte("fecha", endDate);
 
-      const [resTurnos, resPagos] = await Promise.all([promiseTurnos, promisePagos]);
+      const [resTurnos, resPagos, resAusencias] = await Promise.all([promiseTurnos, promisePagos, promiseAusencias]);
 
       if (resTurnos.error || resPagos.error) {
         console.error("Error cargando datos:", resTurnos.error || resPagos.error);
@@ -59,6 +70,7 @@ export default function DashboardPage() {
 
       setRawTurnos(resTurnos.data || []);
       setRawPagos(resPagos.data || []);
+      setRawAusencias(resAusencias.data || []);
 
       // 2. PROCESAR TURNOS
       let totalVentas = 0;
@@ -133,7 +145,7 @@ export default function DashboardPage() {
     };
 
     cargarResumen();
-  }, [mes]);
+  }, [mes, isReady]);
 
   const handleExportExcel = async () => {
     const XLSX = await import("xlsx");
@@ -167,6 +179,66 @@ export default function DashboardPage() {
     XLSX.writeFile(wb, `Reporte_Mensual_${mes}.xlsx`);
   };
 
+  // Eliminar todos los datos del periodo seleccionado
+  const handleEliminarDatos = async () => {
+    setDeleting(true);
+    const { startDate, endDate } = getFechaRango(mes);
+
+    try {
+      // Eliminar en paralelo
+      const [resTurnos, resPagos, resAusencias] = await Promise.all([
+        supabase.from("turnos").delete({ count: "exact" }).gte("fecha", startDate).lte("fecha", endDate),
+        supabase.from("pagos_personal").delete({ count: "exact" }).gte("fecha", startDate).lte("fecha", endDate),
+        supabase.from("ausencias").delete({ count: "exact" }).gte("fecha", startDate).lte("fecha", endDate),
+      ]);
+
+      const errores = [resTurnos.error, resPagos.error, resAusencias.error].filter(Boolean);
+      if (errores.length > 0) {
+        toast.error("Error al eliminar", errores[0]?.message || "Error desconocido");
+      } else {
+        const totalEliminados = (resTurnos.count || 0) + (resPagos.count || 0) + (resAusencias.count || 0);
+        toast.success(
+          "Datos eliminados",
+          `${resTurnos.count || 0} turnos, ${resPagos.count || 0} pagos, ${resAusencias.count || 0} ausencias`
+        );
+
+        // Limpiar estados locales
+        setRawTurnos([]);
+        setRawPagos([]);
+        setRawAusencias([]);
+        setGraficoVentas([]);
+        setResumen({
+          ventasTotales: 0,
+          diferenciaCaja: 0,
+          bencinaEnzo: 0,
+          perrosMuertos: 0,
+          turnosExtrasMonto: 0,
+          horasExtrasMonto: 0,
+          comisionesPromocion: 0,
+          comisionesLubricantes: 0,
+          totalAnticipos: 0,
+          totalAguinaldos: 0,
+        });
+      }
+    } catch (err) {
+      toast.error("Error", "No se pudieron eliminar los datos");
+    }
+
+    setDeleting(false);
+    setConfirmDeleteModal(false);
+  };
+
+  // Texto descriptivo del periodo
+  const periodoTexto = () => {
+    const parts = mes.split("-");
+    const year = parts[0];
+    const month = parseInt(parts[1]);
+    if (parts[2]) {
+      return `${parts[2]} de ${MESES_NOMBRES[month]} ${year}`;
+    }
+    return `${MESES_NOMBRES[month]} ${year}`;
+  };
+
   const money = (val: number) => val.toLocaleString("es-CL", { style: "currency", currency: "CLP" });
   const maxVenta = Math.max(...graficoVentas.map(d => d.monto), 1);
 
@@ -180,22 +252,23 @@ export default function DashboardPage() {
           <p className="text-sm text-zinc-500">Consolidado del mes.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button 
+          <button
             onClick={handleExportExcel}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition"
           >
             <span>📊</span> Exportar Excel
           </button>
-          
-          <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <span className="text-xs font-bold text-zinc-500 uppercase px-3">Periodo:</span>
-            <input
-              type="month"
-              value={mes}
-              onChange={e => setMes(e.target.value)}
-              className="bg-transparent text-sm font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
-            />
-          </div>
+
+          <button
+            onClick={() => setConfirmDeleteModal(true)}
+            className="flex items-center gap-2 border border-red-200 dark:border-red-900/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg text-sm font-medium transition"
+            title="Eliminar datos del periodo"
+          >
+            <Trash2 size={16} />
+            <span className="hidden sm:inline">Limpiar</span>
+          </button>
+
+          <MonthPicker value={mes} onChange={setMes} />
         </div>
       </div>
 
@@ -346,6 +419,17 @@ export default function DashboardPage() {
         </div>
         </>
       )}
+
+      {/* Modal de confirmación para eliminar datos */}
+      <ConfirmModal
+        open={confirmDeleteModal}
+        onConfirm={handleEliminarDatos}
+        onCancel={() => setConfirmDeleteModal(false)}
+        title="Eliminar datos del periodo"
+        message={`¿Estás seguro de eliminar TODOS los datos de ${periodoTexto()}?\n\nSe eliminarán:\n• ${rawTurnos.length} turnos\n• ${rawPagos.length} pagos\n• ${rawAusencias.length} ausencias\n\nEsta acción no se puede deshacer.`}
+        confirmText={deleting ? "Eliminando..." : "Eliminar todo"}
+        variant="danger"
+      />
     </div>
   );
 }

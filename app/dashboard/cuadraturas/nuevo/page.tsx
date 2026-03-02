@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/lib/toast";
+import MoneyInput from "@/components/MoneyInput";
 
 type ItemLista = { id: string; monto: number; referencia: string };
 type Empleado = { id: string; nombre: string };
@@ -108,11 +110,11 @@ export default function NuevaCuadraturaPage() {
   const addRow = (setter: any, defaultRef = "") => setter((prev: any) => [...prev, { id: crypto.randomUUID(), monto: 0, referencia: defaultRef }]);
   const removeRow = (setter: any, id: string) => setter((prev: any) => prev.length > 1 ? prev.filter((i: any) => i.id !== id) : prev);
   const updateRow = (setter: any, id: string, field: string, val: any) => setter((prev: any) => prev.map((i: any) => i.id === id ? { ...i, [field]: val } : i));
-  const handleGasto = (key: string, val: string) => setGastos(prev => ({ ...prev, [key]: parseFloat(val) || 0 }));
+  const handleGasto = (key: string, val: number) => setGastos(prev => ({ ...prev, [key]: val }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!responsable) { alert("⚠️ Selecciona un responsable"); return; }
+    if (!responsable) { toast.warning("Selecciona un responsable", "Este campo es obligatorio para cerrar el turno"); return; }
     
     setLoading(true);
 
@@ -137,12 +139,12 @@ export default function NuevaCuadraturaPage() {
       const { error } = await supabase.from('turnos').insert([datosParaGuardar]);
       if (error) throw error;
 
-      alert("✅ Turno cerrado correctamente");
+      toast.success("Turno cerrado", "Los datos fueron guardados correctamente");
       router.push("/dashboard/cuadraturas");
 
     } catch (error: any) {
       console.error(error);
-      alert("Error: " + error.message);
+      toast.error("Error al guardar", error.message);
     } finally {
       setLoading(false);
     }
@@ -197,12 +199,12 @@ export default function NuevaCuadraturaPage() {
                   <div className="w-10 h-10 flex items-center justify-center bg-emerald-50 text-emerald-700 font-bold rounded-lg text-sm shrink-0 border border-emerald-100">
                     #{index + 1}
                   </div>
-                  <input 
-                    type="number" 
-                    placeholder="Monto" 
-                    value={item.monto || ""} 
-                    onChange={e => updateRow(setDepositos, item.id, "monto", parseFloat(e.target.value))} 
-                    className="flex-1 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700 font-bold text-lg" 
+                  <MoneyInput
+                    value={item.monto}
+                    onChange={(val) => updateRow(setDepositos, item.id, "monto", val)}
+                    placeholder="Monto"
+                    className="flex-1 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700 font-bold text-lg"
+                    allowEmpty
                   />
                   <button type="button" onClick={() => removeRow(setDepositos, item.id)} className="text-red-500 px-3 py-2 hover:bg-red-50 rounded transition">×</button>
                 </div>
@@ -222,15 +224,15 @@ export default function NuevaCuadraturaPage() {
                 <div className="space-y-2">
                 {vouchers.map((item) => (
                     <div key={item.id} className="flex gap-2">
-                        <input 
-                            type="number" 
-                            placeholder="Monto" 
-                            value={item.monto || ""} 
-                            onChange={e => updateRow(setVouchers, item.id, "monto", parseFloat(e.target.value))} 
-                            className="w-32 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700" 
+                        <MoneyInput
+                            value={item.monto}
+                            onChange={(val) => updateRow(setVouchers, item.id, "monto", val)}
+                            placeholder="Monto"
+                            className="w-32 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700"
+                            allowEmpty
                         />
-                        <select 
-                            value={item.referencia} 
+                        <select
+                            value={item.referencia}
                             onChange={e => updateRow(setVouchers, item.id, "referencia", e.target.value)}
                             className="flex-1 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700 bg-white"
                         >
@@ -250,37 +252,37 @@ export default function NuevaCuadraturaPage() {
                 <div className="space-y-3">
                     {/* Gastos Principales */}
                     <div className="grid grid-cols-2 gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-                        
+
                         <div className="col-span-2 grid grid-cols-2 gap-4 bg-yellow-50 dark:bg-yellow-900/10 p-2 rounded-lg border border-yellow-100 dark:border-yellow-900/20">
                              <div>
                                 <label className="block text-xs font-bold text-yellow-700 dark:text-yellow-500 mb-1">Com. Promoción</label>
-                                <input type="number" placeholder="0" value={gastos.comisionesPromocion || ""} onChange={e => handleGasto("comisionesPromocion", e.target.value)} className="w-full p-2 rounded border border-yellow-200 dark:border-yellow-900/30 text-right font-bold" />
+                                <MoneyInput value={gastos.comisionesPromocion} onChange={(val) => handleGasto("comisionesPromocion", val)} placeholder="0" className="w-full p-2 rounded border border-yellow-200 dark:border-yellow-900/30 text-right font-bold" allowEmpty />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-yellow-700 dark:text-yellow-500 mb-1">Com. Lubricantes</label>
-                                <input type="number" placeholder="0" value={gastos.comisionesLubricantes || ""} onChange={e => handleGasto("comisionesLubricantes", e.target.value)} className="w-full p-2 rounded border border-yellow-200 dark:border-yellow-900/30 text-right font-bold" />
+                                <MoneyInput value={gastos.comisionesLubricantes} onChange={(val) => handleGasto("comisionesLubricantes", val)} placeholder="0" className="w-full p-2 rounded border border-yellow-200 dark:border-yellow-900/30 text-right font-bold" allowEmpty />
                             </div>
                         </div>
 
                         {/* Perro Muerto: Solo Informativo (No se suma en el useEffect) */}
                         <div className="relative">
                             <label className="block text-xs font-bold text-red-700 mb-1">Perro Muerto (Info)</label>
-                            <input type="number" placeholder="0" value={gastos.perrosMuertos || ""} onChange={e => handleGasto("perrosMuertos", e.target.value)} className="w-full p-2 rounded border border-red-200 bg-red-50 dark:bg-red-900/10 text-right" />
+                            <MoneyInput value={gastos.perrosMuertos} onChange={(val) => handleGasto("perrosMuertos", val)} placeholder="0" className="w-full p-2 rounded border border-red-200 bg-red-50 dark:bg-red-900/10 text-right" allowEmpty />
                             <span className="text-[10px] text-zinc-400 absolute right-1 -bottom-4">* No cuadra caja</span>
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Bencina Enzo</label>
-                            <input type="number" placeholder="0" value={gastos.bencinaEnzo || ""} onChange={e => handleGasto("bencinaEnzo", e.target.value)} className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" />
+                            <MoneyInput value={gastos.bencinaEnzo} onChange={(val) => handleGasto("bencinaEnzo", val)} placeholder="0" className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" allowEmpty />
                         </div>
-                        
+
                         <div className="col-span-2 grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Turno Extra</label>
-                                <input type="number" placeholder="0" value={gastos.turnoExtra || ""} onChange={e => handleGasto("turnoExtra", e.target.value)} className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" />
+                                <MoneyInput value={gastos.turnoExtra} onChange={(val) => handleGasto("turnoExtra", val)} placeholder="0" className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" allowEmpty />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">Horas Extras</label>
-                                <input type="number" placeholder="0" value={gastos.horasExtras || ""} onChange={e => handleGasto("horasExtras", e.target.value)} className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" />
+                                <MoneyInput value={gastos.horasExtras} onChange={(val) => handleGasto("horasExtras", val)} placeholder="0" className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" allowEmpty />
                             </div>
                         </div>
                     </div>
@@ -290,7 +292,7 @@ export default function NuevaCuadraturaPage() {
                         {Object.keys(gastos).filter(k => !['comisionesPromocion', 'comisionesLubricantes','perrosMuertos','bencinaEnzo','turnoExtra', 'horasExtras'].includes(k)).map((key) => (
                             <div key={key}>
                                 <label className="block text-xs font-medium text-zinc-500 capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
-                                <input type="number" placeholder="0" value={gastos[key as keyof typeof gastos] || ""} onChange={e => handleGasto(key, e.target.value)} className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" />
+                                <MoneyInput value={gastos[key as keyof typeof gastos]} onChange={(val) => handleGasto(key, val)} placeholder="0" className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" allowEmpty />
                             </div>
                         ))}
                     </div>
@@ -304,11 +306,23 @@ export default function NuevaCuadraturaPage() {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div>
                   <label className="block text-sm font-medium mb-1">Venta Combustibles</label>
-                  <input type="number" placeholder="$ 0" value={ventaCombustible} onChange={e => setVentaCombustible(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700" />
+                  <MoneyInput
+                    value={ventaCombustible}
+                    onChange={(val) => setVentaCombustible(val || "")}
+                    placeholder="$ 0"
+                    className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700"
+                    allowEmpty
+                  />
                </div>
                <div>
                   <label className="block text-sm font-medium mb-1">Venta Tienda</label>
-                  <input type="number" placeholder="$ 0" value={ventaTienda} onChange={e => setVentaTienda(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700" />
+                  <MoneyInput
+                    value={ventaTienda}
+                    onChange={(val) => setVentaTienda(val || "")}
+                    placeholder="$ 0"
+                    className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700"
+                    allowEmpty
+                  />
                </div>
              </div>
         </div>
@@ -316,10 +330,13 @@ export default function NuevaCuadraturaPage() {
         {/* 5. TARJETAS */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <h2 className="text-xs font-bold text-indigo-600 uppercase mb-4">5. Tarjetas (Transbank)</h2>
-          <div className="relative">
-             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">$</span>
-             <input type="number" placeholder="0" value={totalTarjetas} onChange={e => setTotalTarjetas(parseFloat(e.target.value) || "")} className="w-full pl-8 p-3 text-lg font-bold rounded border border-zinc-300 focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900 dark:border-zinc-700" />
-          </div>
+          <MoneyInput
+            value={totalTarjetas}
+            onChange={(val) => setTotalTarjetas(val || "")}
+            placeholder="$ 0"
+            className="w-full p-3 text-lg font-bold rounded border border-zinc-300 focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900 dark:border-zinc-700"
+            allowEmpty
+          />
         </div>
 
         {/* BARRA INFERIOR (FOOTER STICKY) */}

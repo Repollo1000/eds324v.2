@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useMesFiltro } from "@/lib/useMesFiltro";
+import { useMesFiltro, getFechaRango } from "@/lib/useMesFiltro";
+import { toast } from "@/lib/toast";
+import ConfirmModal from "@/components/ConfirmModal";
+import MonthPicker from "@/components/MonthPicker";
+import MoneyInput from "@/components/MoneyInput";
 
 type Empleado = { id: string; nombre: string };
 type Pago = {
@@ -18,19 +22,24 @@ export default function PagosPage() {
   const [loading, setLoading] = useState(false);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
-  
+
   // Filtro de mes para la lista
-  const [mes, setMes] = useMesFiltro();
+  const [mes, setMes, isReady] = useMesFiltro();
 
   // Formulario
   const [personalId, setPersonalId] = useState("");
   const [tipo, setTipo] = useState("anticipo"); // anticipo | aguinaldo
-  const [monto, setMonto] = useState("");
+  const [monto, setMonto] = useState(0);
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [comentario, setComentario] = useState("");
 
+  // Modal confirmación
+  const [confirmModal, setConfirmModal] = useState<{ id: string } | null>(null);
+
   // 1. Cargar Empleados y Pagos
   useEffect(() => {
+    if (!isReady) return;
+
     const fetchData = async () => {
       // Cargar personal activo
       const { data: personalData } = await supabase
@@ -38,19 +47,16 @@ export default function PagosPage() {
         .select('id, nombre')
         .eq('activo', true)
         .order('nombre');
-      
+
       if (personalData) setEmpleados(personalData);
 
       fetchPagos();
     };
     fetchData();
-  }, [mes]); // Recargar pagos si cambia el mes
+  }, [mes, isReady]); // Recargar pagos si cambia el mes
 
   const fetchPagos = async () => {
-    const [year, month] = mes.split("-");
-    const startDate = `${year}-${month}-01`;
-    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    const endDate = `${year}-${month}-${lastDay}`;
+    const { startDate, endDate } = getFechaRango(mes);
 
     const { data } = await supabase
       .from('pagos_personal')
@@ -65,8 +71,8 @@ export default function PagosPage() {
   // 2. Guardar Pago
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!personalId || !monto) { alert("Faltan datos"); return; }
-    
+    if (!personalId || monto === 0) { toast.warning("Faltan datos", "Selecciona un trabajador e ingresa el monto"); return; }
+
     setLoading(true);
 
     // Buscar nombre del empleado seleccionado para guardarlo también
@@ -75,29 +81,39 @@ export default function PagosPage() {
     const { error } = await supabase.from('pagos_personal').insert([{
       fecha,
       tipo,
-      monto: Number(monto),
+      monto,
       personal_id: personalId,
       nombre_personal: empleado?.nombre || "Desconocido",
       comentario
     }]);
 
     if (error) {
-      alert("Error: " + error.message);
+      toast.error("Error al guardar", error.message);
     } else {
       // Limpiar formulario y recargar
-      setMonto("");
+      setMonto(0);
       setComentario("");
       fetchPagos();
-      alert("✅ Pago registrado correctamente");
+      toast.success("Pago registrado", "El anticipo fue guardado correctamente");
     }
     setLoading(false);
   };
 
   // 3. Eliminar Pago
-  const handleEliminar = async (id: string) => {
-    if (!confirm("¿Borrar este registro?")) return;
-    const { error } = await supabase.from('pagos_personal').delete().eq('id', id);
-    if (!error) fetchPagos();
+  const confirmarEliminar = (id: string) => {
+    setConfirmModal({ id });
+  };
+
+  const handleEliminar = async () => {
+    if (!confirmModal) return;
+    const { error } = await supabase.from('pagos_personal').delete().eq('id', confirmModal.id);
+    if (!error) {
+      toast.success("Pago eliminado", "El registro fue borrado del sistema");
+      fetchPagos();
+    } else {
+      toast.error("Error al eliminar", error.message);
+    }
+    setConfirmModal(null);
   };
 
   const totalDelMes = pagos.reduce((acc, p) => acc + p.monto, 0);
@@ -151,11 +167,10 @@ export default function PagosPage() {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-500 mb-1">Monto</label>
-                <input 
-                    type="number" 
-                    value={monto} 
-                    onChange={e => setMonto(e.target.value)} 
-                    className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 font-bold text-lg" 
+                <MoneyInput
+                    value={monto}
+                    onChange={setMonto}
+                    className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 font-bold text-lg"
                     placeholder="$ 0"
                 />
               </div>
@@ -199,12 +214,7 @@ export default function PagosPage() {
             {/* Filtro de Mes */}
             <div className="flex items-center justify-between bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <span className="font-bold text-zinc-700 dark:text-zinc-300">Historial del Mes</span>
-                <input 
-                    type="month" 
-                    value={mes} 
-                    onChange={e => setMes(e.target.value)} 
-                    className="bg-transparent font-medium text-zinc-600 focus:outline-none"
-                />
+                <MonthPicker value={mes} onChange={setMes} />
             </div>
 
             {/* Tabla */}
@@ -242,7 +252,7 @@ export default function PagosPage() {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <button 
-                                            onClick={() => handleEliminar(p.id)}
+                                            onClick={() => confirmarEliminar(p.id)}
                                             className="text-red-400 hover:text-red-600 p-1"
                                             title="Eliminar"
                                         >
@@ -270,6 +280,16 @@ export default function PagosPage() {
 
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!confirmModal}
+        onConfirm={handleEliminar}
+        onCancel={() => setConfirmModal(null)}
+        title="Eliminar pago"
+        message="¿Estás seguro de borrar este registro de pago?"
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
+import { toast } from "@/lib/toast";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type Empleado = { id: string; nombre: string };
 
@@ -82,6 +84,9 @@ export default function ImportarPage() {
 
   // Resultado
   const [importados, setImportados] = useState(0);
+
+  // Modal confirmación
+  const [confirmModal, setConfirmModal] = useState(false);
 
   // Cargar TODO el personal (incluyendo inactivos/despedidos para datos históricos)
   useEffect(() => {
@@ -309,6 +314,19 @@ export default function ImportarPage() {
             }
           }
 
+          // MONEDAS/EFECTIVO (R22-R27 = rows 21-26, pueden ser varias filas)
+          for (let r = 21; r <= 26; r++) {
+            const val = num(rows[r]?.[col]);
+            if (val !== 0) {
+              hasData = true;
+              depositosList.push({
+                id: crypto.randomUUID(),
+                monto: val,
+                referencia: "Monedas/Efectivo",
+              });
+            }
+          }
+
           // Collect vouchers - Copiloto (R34-36 = rows 33-35)
           const vouchersList: ItemLista[] = [];
           for (let r = 33; r <= 35; r++) {
@@ -508,7 +526,7 @@ export default function ImportarPage() {
       .single();
 
     if (error) {
-      alert("Error al agregar persona: " + error.message);
+      toast.error("Error al agregar persona", error.message);
       return null;
     }
 
@@ -573,7 +591,7 @@ export default function ImportarPage() {
   const handleImportarAusencias = async () => {
     const validas = filasAusencias.filter((f) => f.valida && f.personalId);
     if (validas.length === 0) {
-      alert("No hay filas validas. Asigna un trabajador a cada fila.");
+      toast.warning("No hay filas válidas", "Asigna un trabajador a cada fila antes de importar");
       return;
     }
 
@@ -589,8 +607,9 @@ export default function ImportarPage() {
 
     const { error } = await supabase.from("ausencias").insert(registros);
     if (error) {
-      alert("Error al importar: " + error.message);
+      toast.error("Error al importar", error.message);
     } else {
+      toast.success("Importación completada", `Se importaron ${validas.length} ausencias`);
       setImportados(validas.length);
       setFilasAusencias([]);
     }
@@ -601,7 +620,7 @@ export default function ImportarPage() {
   const handleImportarCuadraturas = async () => {
     const validos = turnosImport.filter((t) => t.valida);
     if (validos.length === 0) {
-      alert("No hay turnos validos. Verifica que los nombres esten asignados.");
+      toast.warning("No hay turnos válidos", "Verifica que los nombres estén asignados");
       return;
     }
 
@@ -630,29 +649,31 @@ export default function ImportarPage() {
       const batch = registros.slice(i, i + 500);
       const { error } = await supabase.from("turnos").insert(batch);
       if (error) {
-        alert(`Error al importar lote ${Math.floor(i / 500) + 1}: ${error.message}`);
+        toast.error(`Error en lote ${Math.floor(i / 500) + 1}`, error.message);
         setImportando(false);
         return;
       }
       inserted += batch.length;
     }
 
+    toast.success("Importación completada", `Se importaron ${inserted} turnos`);
     setImportados(inserted);
     setTurnosImport([]);
     setImportando(false);
   };
 
   // --- Eliminar cuadraturas del mes ---
+  const abrirModalEliminar = () => {
+    setConfirmModal(true);
+  };
+
   const handleEliminarCuadraturasMes = async () => {
+    setConfirmModal(false);
     const mesStr = String(mesExcel).padStart(2, "0");
     const mesesNombres = [
       "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
       "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
     ];
-    const ok = window.confirm(
-      `Vas a ELIMINAR todos los turnos de ${mesesNombres[mesExcel]} ${anioExcel}. Esta accion no se puede deshacer. ¿Continuar?`
-    );
-    if (!ok) return;
 
     setImportando(true);
     const fechaInicio = `${anioExcel}-${mesStr}-01`;
@@ -665,9 +686,9 @@ export default function ImportarPage() {
       .lte("fecha", fechaFin);
 
     if (error) {
-      alert("Error al eliminar: " + error.message);
+      toast.error("Error al eliminar", error.message);
     } else {
-      alert(`Se eliminaron ${count ?? 0} turnos de ${mesesNombres[mesExcel]} ${anioExcel}.`);
+      toast.success("Turnos eliminados", `Se borraron ${count ?? 0} registros de ${mesesNombres[mesExcel]} ${anioExcel}`);
       setDuplicadosAdvertencia("");
     }
     setImportando(false);
@@ -864,7 +885,7 @@ export default function ImportarPage() {
             </div>
             <div className="flex gap-2 items-center">
               <button
-                onClick={handleEliminarCuadraturasMes}
+                onClick={abrirModalEliminar}
                 disabled={importando}
                 className="px-3 py-2 border border-red-300 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition disabled:opacity-50"
               >
@@ -1173,6 +1194,16 @@ export default function ImportarPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmModal}
+        onConfirm={handleEliminarCuadraturasMes}
+        onCancel={() => setConfirmModal(false)}
+        title="Eliminar turnos del mes"
+        message={`Vas a ELIMINAR todos los turnos de este mes. Esta acción no se puede deshacer. ¿Continuar?`}
+        confirmText="Eliminar todo"
+        variant="danger"
+      />
     </div>
   );
 }

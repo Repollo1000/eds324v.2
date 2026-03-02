@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { useMesFiltro } from "@/lib/useMesFiltro";
+import { useMesFiltro, getFechaRango } from "@/lib/useMesFiltro";
 import { Users } from 'lucide-react';
+import { toast } from "@/lib/toast";
+import ConfirmModal from "@/components/ConfirmModal";
+import MonthPicker from "@/components/MonthPicker";
 
 type FiltroTurno = "" | "mañana" | "tarde" | "noche";
 type Vista = "detalle" | "agrupada";
@@ -12,19 +15,16 @@ type Vista = "detalle" | "agrupada";
 export default function CuadraturasPage() {
   const [filtro, setFiltro] = useState("");
   const [filtroTurno, setFiltroTurno] = useState<FiltroTurno>("");
-  const [filtroDia, setFiltroDia] = useState(0); // 0 = todos
   const [vista, setVista] = useState<Vista>("detalle");
-  const [mes, setMes] = useMesFiltro();
+  const [mes, setMes, isReady] = useMesFiltro();
   const [turnos, setTurnos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState<{ id: string } | null>(null);
 
   // Cargar datos del mes seleccionado
   const fetchTurnos = async () => {
     setLoading(true);
-    const [yearStr, monthStr] = mes.split("-");
-    const lastDay = new Date(parseInt(yearStr), parseInt(monthStr), 0).getDate();
-    const startDate = `${yearStr}-${monthStr}-01`;
-    const endDate = `${yearStr}-${monthStr}-${lastDay}`;
+    const { startDate, endDate } = getFechaRango(mes);
 
     const { data, error } = await supabase
       .from("turnos")
@@ -38,38 +38,34 @@ export default function CuadraturasPage() {
   };
 
   useEffect(() => {
+    if (!isReady) return;
     fetchTurnos();
-  }, [mes]);
+  }, [mes, isReady]);
 
-  const eliminarTurno = async (id: string) => {
-    const confirmacion = window.confirm(
-      "Estas seguro de borrar este turno permanentemente? Esta accion no se puede deshacer."
-    );
-    if (!confirmacion) return;
-
-    const { error } = await supabase.from("turnos").delete().eq("id", id);
-    if (error) {
-      alert("Error al eliminar: " + error.message);
-    } else {
-      fetchTurnos();
-    }
+  const confirmarEliminar = (id: string) => {
+    setConfirmModal({ id });
   };
 
-  // Dias del mes (para el selector)
-  const [yearStr, monthStr] = mes.split("-");
-  const diasEnMes = new Date(parseInt(yearStr), parseInt(monthStr), 0).getDate();
+  const eliminarTurno = async () => {
+    if (!confirmModal) return;
+    const { error } = await supabase.from("turnos").delete().eq("id", confirmModal.id);
+    if (error) {
+      toast.error("Error al eliminar", error.message);
+    } else {
+      toast.success("Turno eliminado", "El registro fue borrado permanentemente");
+      fetchTurnos();
+    }
+    setConfirmModal(null);
+  };
 
-  // Filtrado combinado: texto + turno + dia
+  // Filtrado combinado: texto + turno
   const datosFiltrados = turnos.filter((item) => {
     const matchTexto =
       !filtro ||
       item.responsable?.toLowerCase().includes(filtro.toLowerCase()) ||
       item.fecha?.includes(filtro);
     const matchTurno = !filtroTurno || item.turno === filtroTurno;
-    const matchDia =
-      !filtroDia ||
-      parseInt(item.fecha?.split("-")[2]) === filtroDia;
-    return matchTexto && matchTurno && matchDia;
+    return matchTexto && matchTurno;
   });
 
   const datosAgrupados = useMemo(() => {
@@ -200,32 +196,8 @@ export default function CuadraturasPage() {
             </button>
         </div>
 
-        {/* Selector de mes + dia */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-            <span className="text-xs font-bold text-zinc-500 uppercase">
-              Periodo:
-            </span>
-            <input
-              type="month"
-              value={mes}
-              onChange={(e) => { setMes(e.target.value); setFiltroDia(0); }}
-              className="bg-transparent text-sm font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
-            />
-          </div>
-          <select
-            value={filtroDia}
-            onChange={(e) => setFiltroDia(parseInt(e.target.value))}
-            className="bg-white dark:bg-zinc-900 px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-sm font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
-          >
-            <option value={0}>Todo el mes</option>
-            {Array.from({ length: diasEnMes }, (_, i) => i + 1).map((d) => (
-              <option key={d} value={d}>
-                Dia {d}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Selector de fecha */}
+        <MonthPicker value={mes} onChange={setMes} />
       </div>
 
       {/* Tabla */}
@@ -320,7 +292,7 @@ export default function CuadraturasPage() {
                           Ver Detalle
                         </Link>
                         <button
-                          onClick={() => eliminarTurno(item.id)}
+                          onClick={() => confirmarEliminar(item.id)}
                           className="text-red-400 hover:text-red-600 transition p-1 hover:bg-red-50 rounded"
                           title="Eliminar turno"
                         >
@@ -465,6 +437,16 @@ export default function CuadraturasPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!confirmModal}
+        onConfirm={eliminarTurno}
+        onCancel={() => setConfirmModal(null)}
+        title="Eliminar turno"
+        message="¿Estás seguro de borrar este turno permanentemente? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

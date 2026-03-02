@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/Sidebar";
+import { Toaster } from "sileo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function DashboardLayout({
   children,
@@ -27,6 +29,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <Toaster position="top-right" />
 
       {/* Overlay (mobile only, when sidebar is open) */}
       {sidebarOpen && (
@@ -65,6 +68,9 @@ export default function DashboardLayout({
           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 lg:hidden">
             EDS Control
           </span>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Page content */}

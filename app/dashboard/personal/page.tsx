@@ -13,6 +13,8 @@ import {
   Mail,
   CreditCard
 } from "lucide-react";
+import { toast } from "@/lib/toast";
+import ConfirmModal from "@/components/ConfirmModal";
 
 // Tipo de dato actualizado
 type Personal = {
@@ -45,6 +47,9 @@ export default function PersonalPage() {
     rol: "atendedor" as 'atendedor' | 'supervisor',
     grupo: "A" as 'A' | 'B' | null,
   });
+
+  // Modal confirmación
+  const [confirmModal, setConfirmModal] = useState<{ persona: Personal } | null>(null);
 
   // Cargar datos al inicio
   useEffect(() => {
@@ -110,7 +115,7 @@ export default function PersonalPage() {
       grupo: formData.rol === 'supervisor' ? null : formData.grupo,
     };
 
-    if (!dataToSave.nombre) return alert("El nombre es obligatorio");
+    if (!dataToSave.nombre) { toast.warning("El nombre es obligatorio", "Ingresa el nombre completo del trabajador"); return; }
 
     try {
       if (editingId) {
@@ -127,6 +132,7 @@ export default function PersonalPage() {
       }
 
       setIsModalOpen(false);
+      toast.success(editingId ? "Trabajador actualizado" : "Trabajador creado", "Los datos fueron guardados correctamente");
 
       if (editingId) {
         setPersonal(prev =>
@@ -137,7 +143,7 @@ export default function PersonalPage() {
       }
 
     } catch (error: any) {
-      alert("Error al guardar: " + error.message);
+      toast.error("Error al guardar", error.message);
     }
   };
 
@@ -154,15 +160,21 @@ export default function PersonalPage() {
   };
 
   // Eliminar permanentemente
-  const handleDelete = async (persona: Personal) => {
-    if (!confirm(`¿Eliminar a "${persona.nombre}" permanentemente?\n\nEsta acción no se puede deshacer. Se eliminarán también sus turnos generados.`)) return;
+  const confirmarEliminar = (persona: Personal) => {
+    setConfirmModal({ persona });
+  };
+
+  const handleDelete = async () => {
+    if (!confirmModal) return;
     try {
-      const { error } = await supabase.from("personal").delete().eq("id", persona.id);
+      const { error } = await supabase.from("personal").delete().eq("id", confirmModal.persona.id);
       if (error) throw error;
-      setPersonal(prev => prev.filter(p => p.id !== persona.id));
+      setPersonal(prev => prev.filter(p => p.id !== confirmModal.persona.id));
+      toast.success("Trabajador eliminado", "El registro fue borrado permanentemente");
     } catch (error: any) {
-      alert("Error al eliminar: " + error.message);
+      toast.error("Error al eliminar", error.message);
     }
+    setConfirmModal(null);
   };
 
   const estadoLabel = (estado: string) => {
@@ -280,7 +292,7 @@ export default function PersonalPage() {
                     <Pencil size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(p)}
+                    onClick={() => confirmarEliminar(p)}
                     className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition" title="Eliminar"
                   >
                     <Trash2 size={16} />
@@ -476,6 +488,16 @@ export default function PersonalPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmModal(null)}
+        title="Eliminar trabajador"
+        message={confirmModal ? `¿Eliminar a "${confirmModal.persona.nombre}" permanentemente? Esta acción no se puede deshacer.` : ""}
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 }

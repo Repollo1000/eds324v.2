@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Eye, Send, UploadCloud, CheckCircle, Search, AlertTriangle, Loader2, Clock } from "lucide-react";
 import { useLiquidacionesStore } from "./store";
+import { toast } from "@/lib/toast";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function LiquidacionesPage() {
   const [personal, setPersonal] = useState<any[]>([]);
@@ -14,6 +16,9 @@ export default function LiquidacionesPage() {
   const [enviandoId, setEnviandoId] = useState<number | null>(null);
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
+
+  // Modal confirmación
+  const [confirmModal, setConfirmModal] = useState<{ hoja: any } | null>(null);
 
   // 1. CARGAR PERSONAL
   useEffect(() => {
@@ -108,20 +113,32 @@ export default function LiquidacionesPage() {
       }
       setHojas(nuevasHojas);
     } catch (err) {
-      alert("Error al procesar: " + err);
+      toast.error("Error al procesar", String(err));
     }
     setProcesando(false);
   };
 
   // 4. ACCIÓN MAESTRA: SUBIR + GUARDAR + ENVIAR EMAIL
-  const enviarLiquidacion = async (hoja: any) => {
-    if (!hoja.asignadoA) return alert("Falta asignar trabajador");
-    
+  const iniciarEnvio = (hoja: any) => {
+    if (!hoja.asignadoA) {
+      toast.warning("Falta asignar trabajador", "Selecciona un colaborador de la lista");
+      return;
+    }
     const trabajador = personal.find(p => p.id === hoja.asignadoA);
-    if (!trabajador?.correo) return alert(`El trabajador ${trabajador?.nombre} no tiene correo.`);
+    if (!trabajador?.correo) {
+      toast.warning("Sin correo electrónico", `${trabajador?.nombre} no tiene email registrado`);
+      return;
+    }
+    setConfirmModal({ hoja });
+  };
 
-    if (!confirm(`¿Confirmas enviar la liquidación a ${trabajador.nombre}?`)) return;
+  const enviarLiquidacion = async () => {
+    if (!confirmModal) return;
+    const hoja = confirmModal.hoja;
+    const trabajador = personal.find(p => p.id === hoja.asignadoA);
+    if (!trabajador) return;
 
+    setConfirmModal(null);
     setEnviandoId(hoja.id); // Activar spinner de carga
 
     try {
@@ -155,10 +172,11 @@ export default function LiquidacionesPage() {
 
       // D. Actualizar estado visual (Verde)
       actualizarHoja(hoja.id, { estado: "enviado" });
-      
+      toast.success("Liquidación enviada", `El correo fue enviado a ${trabajador.nombre}`);
+
     } catch (error: any) {
       console.error(error);
-      alert("Ocurrió un error: " + error.message);
+      toast.error("Error al enviar", error.message);
     } finally {
       setEnviandoId(null);
     }
@@ -291,7 +309,7 @@ export default function LiquidacionesPage() {
                   <td className="px-6 py-4 text-right">
                     {hoja.estado !== 'enviado' && (
                         <button
-                            onClick={() => enviarLiquidacion(hoja)}
+                            onClick={() => iniciarEnvio(hoja)}
                             disabled={!hoja.asignadoA || enviandoId === hoja.id}
                             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition shadow-sm ${
                                 !hoja.asignadoA 
@@ -316,6 +334,16 @@ export default function LiquidacionesPage() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        onConfirm={enviarLiquidacion}
+        onCancel={() => setConfirmModal(null)}
+        title="Enviar liquidación"
+        message={confirmModal ? `¿Confirmas enviar la liquidación a ${personal.find(p => p.id === confirmModal.hoja.asignadoA)?.nombre}?` : ""}
+        confirmText="Enviar"
+        variant="info"
+      />
     </div>
   );
 }

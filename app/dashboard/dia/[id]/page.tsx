@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
+import { toast } from "@/lib/toast";
+import MoneyInput from "@/components/MoneyInput";
 
 type ItemLista = { id: string; monto: number; referencia: string };
 type Empleado = { id: string; nombre: string };
@@ -72,7 +73,7 @@ export default function DetalleTurnoPage() {
         .single();
 
       if (error || !turnoData) {
-        alert("No se encontró el turno.");
+        toast.error("Turno no encontrado", "El registro no existe o fue eliminado");
         router.push("/dashboard/cuadraturas");
         return;
       }
@@ -122,12 +123,12 @@ export default function DetalleTurnoPage() {
   const addRow = (setter: any, defaultRef = "") => setter((prev: any) => [...prev, { id: crypto.randomUUID(), monto: 0, referencia: defaultRef }]);
   const removeRow = (setter: any, id: string) => setter((prev: any) => prev.length > 1 ? prev.filter((i: any) => i.id !== id) : prev);
   const updateRow = (setter: any, id: string, field: string, val: any) => setter((prev: any) => prev.map((i: any) => i.id === id ? { ...i, [field]: val } : i));
-  const handleGasto = (key: string, val: string) => setGastos(prev => ({ ...prev, [key]: parseFloat(val) || 0 }));
+  const handleGasto = (key: string, val: number) => setGastos(prev => ({ ...prev, [key]: val }));
 
   // --- 3. GUARDAR CAMBIOS (UPDATE) ---
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!responsable) { alert("⚠️ Selecciona un responsable"); return; }
+    if (!responsable) { toast.warning("Selecciona un responsable", "Este campo es obligatorio"); return; }
     
     setGuardando(true);
 
@@ -157,12 +158,12 @@ export default function DetalleTurnoPage() {
 
       if (error) throw error;
 
-      alert("✅ Cuadratura actualizada correctamente");
+      toast.success("Cuadratura actualizada", "Los cambios fueron guardados");
       router.push("/dashboard/cuadraturas");
 
     } catch (error: any) {
       console.error(error);
-      alert("Error al actualizar: " + error.message);
+      toast.error("Error al actualizar", error.message);
     } finally {
       setGuardando(false);
     }
@@ -232,7 +233,7 @@ export default function DetalleTurnoPage() {
                   <div className="w-10 h-10 flex items-center justify-center bg-emerald-50 text-emerald-700 font-bold rounded-lg text-sm shrink-0 border border-emerald-100">
                     #{index + 1}
                   </div>
-                  <input type="number" value={item.monto || ""} onChange={e => updateRow(setDepositos, item.id, "monto", parseFloat(e.target.value))} className="flex-1 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700 font-bold text-lg" />
+                  <MoneyInput value={item.monto || 0} onChange={val => updateRow(setDepositos, item.id, "monto", val)} className="flex-1 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700 font-bold text-lg" allowEmpty />
                   <button type="button" onClick={() => removeRow(setDepositos, item.id)} className="text-red-500 px-3">×</button>
                 </div>
               ))}
@@ -249,7 +250,7 @@ export default function DetalleTurnoPage() {
                 <div className="space-y-2">
                 {vouchers.map((item) => (
                     <div key={item.id} className="flex gap-2">
-                        <input type="number" value={item.monto || ""} onChange={e => updateRow(setVouchers, item.id, "monto", parseFloat(e.target.value))} className="w-32 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700" />
+                        <MoneyInput value={item.monto || 0} onChange={val => updateRow(setVouchers, item.id, "monto", val)} className="w-32 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700" allowEmpty />
                         <select value={item.referencia} onChange={e => updateRow(setVouchers, item.id, "referencia", e.target.value)} className="flex-1 p-2 rounded border dark:bg-zinc-900 dark:border-zinc-700 bg-white">
                             <option value="Copiloto">Copiloto</option>
                             <option value="ShellCard">ShellCard</option>
@@ -269,11 +270,11 @@ export default function DetalleTurnoPage() {
                      <div className="grid grid-cols-2 gap-4 bg-yellow-50 dark:bg-yellow-900/10 p-2 rounded-lg border border-yellow-100 dark:border-yellow-900/20">
                          <div>
                             <label className="block text-xs font-bold text-yellow-700 mb-1">Com. Promoción</label>
-                            <input type="number" value={gastos.comisionesPromocion || ""} onChange={e => handleGasto("comisionesPromocion", e.target.value)} className="w-full p-2 rounded border border-yellow-200 text-right font-bold" />
+                            <MoneyInput value={gastos.comisionesPromocion || 0} onChange={val => handleGasto("comisionesPromocion", val)} className="w-full p-2 rounded border border-yellow-200 text-right font-bold" allowEmpty />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-yellow-700 mb-1">Com. Lubricantes</label>
-                            <input type="number" value={gastos.comisionesLubricantes || ""} onChange={e => handleGasto("comisionesLubricantes", e.target.value)} className="w-full p-2 rounded border border-yellow-200 text-right font-bold" />
+                            <MoneyInput value={gastos.comisionesLubricantes || 0} onChange={val => handleGasto("comisionesLubricantes", val)} className="w-full p-2 rounded border border-yellow-200 text-right font-bold" allowEmpty />
                         </div>
                     </div>
 
@@ -281,19 +282,19 @@ export default function DetalleTurnoPage() {
                         {/* Perro Muerto Informativo */}
                         <div className="relative">
                             <label className="block text-xs font-bold text-red-700 mb-1">Perro Muerto (Info)</label>
-                            <input type="number" value={gastos.perrosMuertos || ""} onChange={e => handleGasto("perrosMuertos", e.target.value)} className="w-full p-2 rounded border border-red-200 bg-red-50 text-right" />
+                            <MoneyInput value={gastos.perrosMuertos || 0} onChange={val => handleGasto("perrosMuertos", val)} className="w-full p-2 rounded border border-red-200 bg-red-50 text-right" allowEmpty />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-zinc-700 mb-1">Bencina Enzo</label>
-                            <input type="number" value={gastos.bencinaEnzo || ""} onChange={e => handleGasto("bencinaEnzo", e.target.value)} className="w-full p-2 rounded border border-zinc-300 text-right" />
+                            <MoneyInput value={gastos.bencinaEnzo || 0} onChange={val => handleGasto("bencinaEnzo", val)} className="w-full p-2 rounded border border-zinc-300 text-right" allowEmpty />
                         </div>
                          <div>
                             <label className="block text-xs font-bold text-zinc-700 mb-1">Turno Extra</label>
-                            <input type="number" value={gastos.turnoExtra || ""} onChange={e => handleGasto("turnoExtra", e.target.value)} className="w-full p-2 rounded border border-zinc-300 text-right" />
+                            <MoneyInput value={gastos.turnoExtra || 0} onChange={val => handleGasto("turnoExtra", val)} className="w-full p-2 rounded border border-zinc-300 text-right" allowEmpty />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-zinc-700 mb-1">Horas Extras</label>
-                            <input type="number" value={gastos.horasExtras || ""} onChange={e => handleGasto("horasExtras", e.target.value)} className="w-full p-2 rounded border border-zinc-300 text-right" />
+                            <MoneyInput value={gastos.horasExtras || 0} onChange={val => handleGasto("horasExtras", val)} className="w-full p-2 rounded border border-zinc-300 text-right" allowEmpty />
                         </div>
                     </div>
                     {/* Otros campos */}
@@ -301,7 +302,7 @@ export default function DetalleTurnoPage() {
                          {Object.keys(gastos).filter(k => !['comisionesPromocion', 'comisionesLubricantes','perrosMuertos','bencinaEnzo','turnoExtra', 'horasExtras'].includes(k)).map((key) => (
                             <div key={key}>
                                 <label className="block text-xs font-medium text-zinc-500 capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
-                                <input type="number" value={gastos[key as keyof typeof gastos] || ""} onChange={e => handleGasto(key, e.target.value)} className="w-full p-2 rounded border border-zinc-300 text-right" />
+                                <MoneyInput value={gastos[key as keyof typeof gastos] || 0} onChange={val => handleGasto(key, val)} className="w-full p-2 rounded border border-zinc-300 text-right" allowEmpty />
                             </div>
                         ))}
                     </div>
@@ -316,17 +317,17 @@ export default function DetalleTurnoPage() {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">Combustibles</label>
-                        <input type="number" value={ventaCombustible} onChange={e => setVentaCombustible(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300" />
+                        <MoneyInput value={ventaCombustible || 0} onChange={val => setVentaCombustible(val || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300" allowEmpty />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Tienda</label>
-                        <input type="number" value={ventaTienda} onChange={e => setVentaTienda(parseFloat(e.target.value) || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300" />
+                        <MoneyInput value={ventaTienda || 0} onChange={val => setVentaTienda(val || "")} className="w-full text-lg font-bold p-3 rounded border border-zinc-300" allowEmpty />
                     </div>
                 </div>
              </div>
              <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <h2 className="text-xs font-bold text-indigo-600 uppercase mb-4">5. Tarjetas (Transbank)</h2>
-                <input type="number" value={totalTarjetas} onChange={e => setTotalTarjetas(parseFloat(e.target.value) || "")} className="w-full p-3 text-lg font-bold rounded border border-zinc-300" />
+                <MoneyInput value={totalTarjetas || 0} onChange={val => setTotalTarjetas(val || "")} className="w-full p-3 text-lg font-bold rounded border border-zinc-300" allowEmpty />
              </div>
         </div>
 
