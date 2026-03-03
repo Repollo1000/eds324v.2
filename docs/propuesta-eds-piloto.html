@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta Comercial - EDS [Nombre Estación]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #fff;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #fbbf24;
+            color: #78350f;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 15px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            color: #0d9488;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .section h3 {
+            font-size: 15px;
+            color: #333;
+            margin: 20px 0 10px 0;
+        }
+
+        p {
+            margin-bottom: 12px;
+            color: #444;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+            border: 2px solid #0d9488;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .highlight-box h3 {
+            color: #0d9488;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .founder-benefits {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .benefit-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .benefit-card .icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .benefit-card .title {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .benefit-card .desc {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        th {
+            background: #f8f8f8;
+            font-weight: 600;
+            color: #333;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .precio-escalonado {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            color: white;
+            margin: 25px 0;
+        }
+
+        .precio-escalonado h3 {
+            color: #a5f3fc;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .precio-timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .precio-timeline::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: linear-gradient(90deg, #22d3ee, #0d9488);
+            border-radius: 2px;
+        }
+
+        .precio-step {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .precio-step .month {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .precio-step .circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #334155;
+            border: 3px solid #22d3ee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .precio-step.active .circle {
+            background: #0d9488;
+            border-color: #5eead4;
+        }
+
+        .precio-step .amount {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .precio-final {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #334155;
+        }
+
+        .precio-final .label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+
+        .precio-final .amount {
+            font-size: 36px;
+            font-weight: 700;
+            color: #5eead4;
+        }
+
+        .precio-final .period {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .justificacion {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .justificacion h4 {
+            color: #92400e;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .justificacion ul {
+            margin-left: 20px;
+            color: #78350f;
+        }
+
+        .justificacion li {
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .comparativa {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .comparativa-card {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .comparativa-card.sin {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+        }
+
+        .comparativa-card.con {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+        }
+
+        .comparativa-card .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .comparativa-card h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .comparativa-card.sin h4 { color: #dc2626; }
+        .comparativa-card.con h4 { color: #16a34a; }
+
+        .comparativa-card ul {
+            text-align: left;
+            font-size: 13px;
+            margin-left: 15px;
+        }
+
+        .comparativa-card li {
+            margin-bottom: 5px;
+        }
+
+        .ahorro-box {
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .ahorro-box .label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .ahorro-box .amount {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .ahorro-box .desc {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .incluye-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .incluye-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .incluye-item .check {
+            color: #0d9488;
+            font-weight: bold;
+        }
+
+        .firma-section {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e5e5;
+        }
+
+        .firma-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .firma-box {
+            text-align: center;
+        }
+
+        .firma-box .linea {
+            border-bottom: 1px solid #333;
+            height: 60px;
+        }
+
+        .firma-box .nombre {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .firma-box .cargo {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        @media print {
+            body { padding: 20px; }
+            .precio-escalonado { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Sistema de Gestión EDS</h1>
+        <p class="subtitle">Propuesta Comercial Personalizada</p>
+        <span class="badge">Cliente Fundador</span>
+    </div>
+
+    <div class="section">
+        <h2>Programa Cliente Fundador</h2>
+
+        <p>Como nuestro <strong>primer cliente</strong>, ustedes son parte fundamental del desarrollo de este sistema. Por esa razón, hemos diseñado un programa especial que reconoce su confianza y les permite adoptar la plataforma de manera gradual.</p>
+
+        <div class="highlight-box">
+            <h3>¿Qué significa ser Cliente Fundador?</h3>
+            <div class="founder-benefits">
+                <div class="benefit-card">
+                    <div class="icon">🏆</div>
+                    <div class="title">Precio Preferencial</div>
+                    <div class="desc">Tarifa escalonada exclusiva que no estará disponible para futuros clientes</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">🎯</div>
+                    <div class="title">Personalización Incluida</div>
+                    <div class="desc">Adaptamos el sistema a sus procesos específicos sin costo adicional</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">📞</div>
+                    <div class="title">Soporte Prioritario</div>
+                    <div class="desc">Atención directa y personalizada durante toda la implementación</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">🔄</div>
+                    <div class="title">Actualizaciones Gratis</div>
+                    <div class="desc">Todas las mejoras futuras del sistema incluidas sin costo extra</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Modelo de Inversión Progresiva</h2>
+
+        <p>Entendemos que adoptar un nuevo sistema requiere tiempo y adaptación. Por eso, proponemos un modelo donde la inversión crece gradualmente junto con el valor que ustedes obtienen:</p>
+
+        <div class="precio-escalonado">
+            <h3>Evolución de la Inversión Mensual</h3>
+
+            <div class="precio-timeline">
+                <div class="precio-step active">
+                    <div class="month">MES 1</div>
+                    <div class="circle">1</div>
+                    <div class="amount">$250.000</div>
+                </div>
+                <div class="precio-step">
+                    <div class="month">MES 2</div>
+                    <div class="circle">2</div>
+                    <div class="amount">$300.000</div>
+                </div>
+                <div class="precio-step">
+                    <div class="month">MES 3</div>
+                    <div class="circle">3</div>
+                    <div class="amount">$350.000</div>
+                </div>
+                <div class="precio-step">
+                    <div class="month">MES 4</div>
+                    <div class="circle">4</div>
+                    <div class="amount">$400.000</div>
+                </div>
+                <div class="precio-step">
+                    <div class="month">MES 5</div>
+                    <div class="circle">5</div>
+                    <div class="amount">$450.000</div>
+                </div>
+                <div class="precio-step active">
+                    <div class="month">MES 6+</div>
+                    <div class="circle">∞</div>
+                    <div class="amount">$500.000</div>
+                </div>
+            </div>
+
+            <div class="precio-final">
+                <div class="label">Precio Regular (desde mes 6)</div>
+                <div class="amount">$500.000</div>
+                <div class="period">mensuales</div>
+            </div>
+        </div>
+
+        <div class="justificacion">
+            <h4>¿Por qué un modelo escalonado?</h4>
+            <ul>
+                <li><strong>Mes 1-2:</strong> Período de implementación y aprendizaje. Ustedes invierten tiempo en aprender el sistema, nosotros en conocer sus procesos.</li>
+                <li><strong>Mes 3-4:</strong> El sistema comienza a generar valor real con datos históricos acumulados y procesos optimizados.</li>
+                <li><strong>Mes 5:</strong> Operación estable. El sistema ya demuestra su valor completo en ahorro de tiempo y control.</li>
+                <li><strong>Mes 6+:</strong> Precio regular que refleja el valor total del servicio: sistema funcionando, soporte continuo, actualizaciones.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Ahorro por ser Cliente Fundador</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th class="text-right">Precio Regular</th>
+                    <th class="text-right">Su Precio</th>
+                    <th class="text-right">Ahorro</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mes 1</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$250.000</td>
+                    <td class="text-right" style="color: #16a34a; font-weight: 600;">$250.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 2</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$300.000</td>
+                    <td class="text-right" style="color: #16a34a; font-weight: 600;">$200.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 3</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$350.000</td>
+                    <td class="text-right" style="color: #16a34a; font-weight: 600;">$150.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 4</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$400.000</td>
+                    <td class="text-right" style="color: #16a34a; font-weight: 600;">$100.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 5</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$450.000</td>
+                    <td class="text-right" style="color: #16a34a; font-weight: 600;">$50.000</td>
+                </tr>
+                <tr style="background: #f0fdf4;">
+                    <td><strong>Total 5 meses</strong></td>
+                    <td class="text-right"><strong>$2.500.000</strong></td>
+                    <td class="text-right"><strong>$1.750.000</strong></td>
+                    <td class="text-right" style="color: #16a34a; font-weight: 700;">$750.000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="ahorro-box">
+            <div class="label">Ahorro total como Cliente Fundador</div>
+            <div class="amount">$750.000</div>
+            <div class="desc">en los primeros 5 meses de operación</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Valor del Sistema</h2>
+
+        <div class="comparativa">
+            <div class="comparativa-card sin">
+                <div class="icon">📋</div>
+                <h4>Sin el Sistema</h4>
+                <ul>
+                    <li>Cuadraturas manuales en Excel</li>
+                    <li>Errores de fórmulas frecuentes</li>
+                    <li>Diferencias detectadas tarde</li>
+                    <li>Información dispersa</li>
+                    <li>Horas de trabajo administrativo</li>
+                    <li>Sin historial centralizado</li>
+                </ul>
+            </div>
+            <div class="comparativa-card con">
+                <div class="icon">✨</div>
+                <h4>Con el Sistema</h4>
+                <ul>
+                    <li>Cuadraturas en minutos</li>
+                    <li>Cálculos automáticos</li>
+                    <li>Alertas en tiempo real</li>
+                    <li>Todo en un solo lugar</li>
+                    <li>Tiempo libre para gestionar</li>
+                    <li>Historial completo y respaldado</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Retorno de Inversión Estimado</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Beneficio</th>
+                    <th class="text-right">Valor Mensual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ahorro en tiempo administrativo (45+ hrs/mes)</td>
+                    <td class="text-right">$250.000</td>
+                </tr>
+                <tr>
+                    <td>Pérdidas evitadas (diferencias detectadas a tiempo)</td>
+                    <td class="text-right">$150.000</td>
+                </tr>
+                <tr>
+                    <td>Reducción de errores en pagos/anticipos</td>
+                    <td class="text-right">$50.000</td>
+                </tr>
+                <tr style="background: #f8f8f8;">
+                    <td><strong>Valor total generado</strong></td>
+                    <td class="text-right"><strong>$450.000/mes</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>¿Qué Incluye el Servicio?</h2>
+
+        <div class="incluye-list">
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Sistema funcionando 24/7</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Respaldo automático diario</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Soporte por WhatsApp</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Capacitación inicial</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Actualizaciones incluidas</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Exportación a Excel</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Múltiples usuarios</span>
+            </div>
+            <div class="incluye-item">
+                <span class="check">✓</span>
+                <span>Envío de liquidaciones</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Resumen de Inversión</h2>
+
+        <table>
+            <tbody>
+                <tr>
+                    <td><strong>Instalación e Implementación</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$0</td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="font-size: 13px; color: #666; padding-top: 0;">
+                        Incluido como beneficio de Cliente Fundador (valor regular: $500.000)
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Mes 1</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$250.000</td>
+                </tr>
+                <tr>
+                    <td><strong>Mes 2</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$300.000</td>
+                </tr>
+                <tr>
+                    <td><strong>Mes 3</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$350.000</td>
+                </tr>
+                <tr>
+                    <td><strong>Mes 4</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$400.000</td>
+                </tr>
+                <tr>
+                    <td><strong>Mes 5</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$450.000</td>
+                </tr>
+                <tr style="background: #0d9488; color: white;">
+                    <td><strong>Mes 6 en adelante</strong></td>
+                    <td class="text-right" style="font-size: 18px; font-weight: 700;">$500.000/mes</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="firma-section">
+        <h2>Aceptación de la Propuesta</h2>
+        <p>Ambas partes acuerdan los términos establecidos en este documento.</p>
+
+        <div class="firma-grid">
+            <div class="firma-box">
+                <div class="linea"></div>
+                <div class="nombre">[Nombre Representante EDS]</div>
+                <div class="cargo">Representante Estación de Servicio</div>
+            </div>
+            <div class="firma-box">
+                <div class="linea"></div>
+                <div class="nombre">[Tu Nombre]</div>
+                <div class="cargo">Proveedor del Sistema</div>
+            </div>
+        </div>
+
+        <p style="text-align: center; margin-top: 30px; color: #666; font-size: 13px;">
+            Fecha: ______ / ______ / 2026
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>Propuesta válida por 15 días</p>
+        <p>Sistema de Gestión EDS - Marzo 2026</p>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Sistema de Gestión EDS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fff;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .cover {
+            text-align: center;
+            padding: 80px 40px;
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 50px;
+        }
+
+        .cover h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .cover .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .cover .version {
+            margin-top: 30px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .toc {
+            background: #f8f8f8;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 50px;
+        }
+
+        .toc h2 {
+            margin-bottom: 20px;
+            color: #0d9488;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .toc a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            color: #0d9488;
+        }
+
+        .section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+
+        .section h2 {
+            font-size: 24px;
+            color: #0d9488;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #0d9488;
+        }
+
+        .section h3 {
+            font-size: 18px;
+            color: #333;
+            margin: 25px 0 15px;
+        }
+
+        .section h4 {
+            font-size: 15px;
+            color: #666;
+            margin: 20px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        .feature-box {
+            background: #f0fdfa;
+            border-left: 4px solid #0d9488;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box strong {
+            color: #92400e;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #e5e5e5;
+        }
+
+        th {
+            background: #f8f8f8;
+            font-weight: 600;
+        }
+
+        .step {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            background: #0d9488;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .screenshot-placeholder {
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .icon-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .icon-text .icon {
+            font-size: 24px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        .menu-item .icon {
+            font-size: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #e5e5e5;
+            margin-top: 50px;
+        }
+
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .cover {
+                page-break-after: always;
+            }
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA -->
+    <div class="cover">
+        <h1>Sistema de Gestión EDS</h1>
+        <p class="subtitle">Manual de Usuario</p>
+        <p class="version">Versión 1.0 - Marzo 2026</p>
+    </div>
+
+    <!-- ÍNDICE -->
+    <div class="toc">
+        <h2>Contenido</h2>
+        <ul>
+            <li><a href="#intro">1. Introducción</a></li>
+            <li><a href="#acceso">2. Acceso al Sistema</a></li>
+            <li><a href="#dashboard">3. Dashboard Principal</a></li>
+            <li><a href="#cuadraturas">4. Cuadraturas de Caja</a></li>
+            <li><a href="#turnos">5. Generador de Turnos</a></li>
+            <li><a href="#personal">6. Gestión de Personal</a></li>
+            <li><a href="#ausencias">7. Ausencias y Licencias</a></li>
+            <li><a href="#pagos">8. Pagos y Anticipos</a></li>
+            <li><a href="#liquidaciones">9. Liquidaciones</a></li>
+            <li><a href="#importar">10. Importar desde Excel</a></li>
+            <li><a href="#tips">11. Consejos y Atajos</a></li>
+        </ul>
+    </div>
+
+    <!-- 1. INTRODUCCIÓN -->
+    <div class="section" id="intro">
+        <h2>1. Introducción</h2>
+
+        <p>El <strong>Sistema de Gestión EDS</strong> es una plataforma web diseñada para administrar las operaciones diarias de estaciones de servicio. Permite gestionar:</p>
+
+        <ul>
+            <li><strong>Cuadraturas de caja</strong> - Control de ventas, depósitos, vouchers y diferencias</li>
+            <li><strong>Turnos del personal</strong> - Generación automática de horarios</li>
+            <li><strong>Personal</strong> - Registro de empleados, roles y grupos</li>
+            <li><strong>Ausencias</strong> - Control de faltas y licencias médicas</li>
+            <li><strong>Pagos RRHH</strong> - Anticipos y aguinaldos</li>
+            <li><strong>Liquidaciones</strong> - Envío automático por email</li>
+        </ul>
+
+        <div class="feature-box">
+            <strong>Beneficios principales:</strong>
+            <ul>
+                <li>Acceso desde cualquier dispositivo con internet</li>
+                <li>Datos centralizados y respaldados automáticamente</li>
+                <li>Cálculos automáticos de diferencias de caja</li>
+                <li>Reportes exportables a Excel</li>
+                <li>Modo oscuro para uso nocturno</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 2. ACCESO -->
+    <div class="section" id="acceso">
+        <h2>2. Acceso al Sistema</h2>
+
+        <h3>Ingresar al sistema</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <strong>Abrir el navegador</strong><br>
+                Usar Google Chrome, Firefox, Safari o Edge (versiones actualizadas).
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <strong>Ir a la dirección del sistema</strong><br>
+                Ingresar la URL proporcionada por el administrador.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <strong>Iniciar sesión</strong><br>
+                Usar las credenciales de Google o el correo/contraseña asignado.
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <strong>Importante:</strong> No compartir las credenciales de acceso. Cada usuario debe tener su propia cuenta.
+        </div>
+
+        <h3>Cerrar sesión</h3>
+        <p>Para salir del sistema, hacer clic en el botón <strong>"Cerrar sesión"</strong> ubicado en la parte inferior del menú lateral.</p>
+    </div>
+
+    <!-- 3. DASHBOARD -->
+    <div class="section" id="dashboard">
+        <h2>3. Dashboard Principal</h2>
+
+        <p>El dashboard muestra un resumen completo del mes seleccionado. Es la primera pantalla que verás al ingresar.</p>
+
+        <h3>Elementos del Dashboard</h3>
+
+        <h4>Selector de Mes</h4>
+        <p>En la esquina superior derecha puedes cambiar el período a visualizar. Por defecto muestra el mes actual.</p>
+
+        <h4>Ventas Totales</h4>
+        <p>Tarjeta principal que muestra:</p>
+        <ul>
+            <li><strong>Ventas Totales</strong> - Suma de todas las ventas del período</li>
+            <li><strong>Diferencia de Caja</strong> - Total de sobrantes/faltantes (verde = sobrante, rojo = faltante)</li>
+        </ul>
+
+        <h4>Gráfico de Tendencia</h4>
+        <p>Visualización de las ventas día a día. Pasar el mouse sobre cada barra para ver el monto exacto.</p>
+
+        <h4>Tarjetas de Gastos</h4>
+        <table>
+            <tr>
+                <th>Tarjeta</th>
+                <th>Descripción</th>
+            </tr>
+            <tr>
+                <td>Comisiones</td>
+                <td>Promoción + Lubricantes</td>
+            </tr>
+            <tr>
+                <td>Bencina Enzo</td>
+                <td>Combustible asignado a encargado</td>
+            </tr>
+            <tr>
+                <td>Perros Muertos</td>
+                <td>Ventas no cobradas</td>
+            </tr>
+            <tr>
+                <td>Extras</td>
+                <td>Turnos extras + Horas extras</td>
+            </tr>
+        </table>
+
+        <h4>Tarjetas RRHH</h4>
+        <table>
+            <tr>
+                <th>Tarjeta</th>
+                <th>Descripción</th>
+            </tr>
+            <tr>
+                <td>Anticipos</td>
+                <td>Total de adelantos de sueldo</td>
+            </tr>
+            <tr>
+                <td>Aguinaldos</td>
+                <td>Total de aguinaldos pagados</td>
+            </tr>
+        </table>
+
+        <h4>Botones de Acción</h4>
+        <ul>
+            <li><strong>Exportar Excel</strong> - Descarga un archivo con todos los datos del mes</li>
+            <li><strong>Limpiar</strong> - Elimina todos los datos del período (requiere confirmación)</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>Tip:</strong> Haz clic en cualquier tarjeta de gastos para ver el detalle de cada movimiento.
+        </div>
+    </div>
+
+    <!-- 4. CUADRATURAS -->
+    <div class="section" id="cuadraturas">
+        <h2>4. Cuadraturas de Caja</h2>
+
+        <p>Las cuadraturas permiten registrar y controlar el cierre de caja de cada turno.</p>
+
+        <h3>Ver Historial de Cuadraturas</h3>
+        <p>Ir a <strong>Operación → Historial Cuadraturas</strong> en el menú lateral.</p>
+
+        <p>La tabla muestra:</p>
+        <ul>
+            <li>Fecha del turno</li>
+            <li>Turno (Mañana/Tarde/Noche)</li>
+            <li>Responsable</li>
+            <li>Venta total</li>
+            <li>Diferencia (con color según sobrante/faltante)</li>
+        </ul>
+
+        <h4>Filtros disponibles</h4>
+        <ul>
+            <li><strong>Mes</strong> - Selector de período</li>
+            <li><strong>Responsable</strong> - Filtrar por persona</li>
+            <li><strong>Turno</strong> - Filtrar por Mañana/Tarde/Noche</li>
+        </ul>
+
+        <h3>Crear Nueva Cuadratura</h3>
+        <p>Ir a <strong>Operación → Nueva Cuadratura</strong>.</p>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <strong>Seleccionar fecha y turno</strong><br>
+                Elegir la fecha y el turno (Mañana, Tarde o Noche).
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <strong>Seleccionar responsable</strong><br>
+                Elegir quién estuvo a cargo del turno.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <strong>Ingresar datos de venta</strong><br>
+                Registrar venta de combustible y tienda.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <strong>Registrar depósitos</strong><br>
+                Agregar cada depósito realizado con su referencia.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+                <strong>Registrar vouchers</strong><br>
+                Agregar vouchers Copiloto y ShellCard.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">6</div>
+            <div class="step-content">
+                <strong>Registrar gastos</strong><br>
+                Ingresar gastos del turno (bencina, comisiones, etc.).
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">7</div>
+            <div class="step-content">
+                <strong>Guardar</strong><br>
+                El sistema calculará automáticamente la diferencia.
+            </div>
+        </div>
+
+        <h3>Editar una Cuadratura</h3>
+        <p>En el historial, hacer clic en cualquier fila para abrir el detalle y editar los valores.</p>
+
+        <div class="warning-box">
+            <strong>Cálculo de diferencia:</strong><br>
+            <code>Diferencia = Efectivo Real - Efectivo Esperado</code><br>
+            <code>Efectivo Esperado = Ventas - Tarjetas - Vouchers - Gastos</code>
+        </div>
+    </div>
+
+    <!-- 5. TURNOS -->
+    <div class="section" id="turnos">
+        <h2>5. Generador de Turnos</h2>
+
+        <p>El generador crea automáticamente los horarios mensuales respetando los grupos y rotaciones.</p>
+
+        <h3>Requisitos previos</h3>
+        <ul>
+            <li>2 supervisores registrados</li>
+            <li>7 atendedores en Grupo A</li>
+            <li>7 atendedores en Grupo B</li>
+        </ul>
+
+        <h3>Generar turnos</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <strong>Ir a Operación → Turnos</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <strong>Seleccionar mes y año</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <strong>Configurar opciones</strong>
+                <ul>
+                    <li>Supervisor fijo de mañana (opcional)</li>
+                    <li>Día de cambio de supervisor</li>
+                    <li>Incluir 5° domingo si aplica</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <strong>Clic en "Generar Turnos"</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+                <strong>Revisar en las vistas disponibles</strong>
+                <ul>
+                    <li><strong>Calendario</strong> - Matriz de persona por día</li>
+                    <li><strong>Semanal</strong> - Equipos por turno M/T/N</li>
+                    <li><strong>Personal</strong> - Estadísticas individuales</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">6</div>
+            <div class="step-content">
+                <strong>Clic en "Guardar Turnos"</strong><br>
+                Los turnos quedan registrados en el sistema.
+            </div>
+        </div>
+
+        <h3>Códigos de turno</h3>
+        <table>
+            <tr>
+                <th>Código</th>
+                <th>Turno</th>
+                <th>Horario típico</th>
+            </tr>
+            <tr>
+                <td style="background: #fef3c7; text-align: center; font-weight: bold;">M</td>
+                <td>Mañana</td>
+                <td>07:00 - 15:00</td>
+            </tr>
+            <tr>
+                <td style="background: #dbeafe; text-align: center; font-weight: bold;">T</td>
+                <td>Tarde</td>
+                <td>15:00 - 23:00</td>
+            </tr>
+            <tr>
+                <td style="background: #f3e8ff; text-align: center; font-weight: bold;">N</td>
+                <td>Noche</td>
+                <td>23:00 - 07:00</td>
+            </tr>
+            <tr>
+                <td style="background: #f0f0f0; text-align: center; font-weight: bold;">L</td>
+                <td>Libre</td>
+                <td>Día de descanso</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 6. PERSONAL -->
+    <div class="section" id="personal">
+        <h2>6. Gestión de Personal</h2>
+
+        <p>Administra los datos de todos los empleados de la estación.</p>
+
+        <h3>Ver lista de personal</h3>
+        <p>Ir a <strong>Admin → Personal</strong>.</p>
+
+        <p>Puedes filtrar por estado:</p>
+        <ul>
+            <li><strong>Activo</strong> - Empleados trabajando actualmente</li>
+            <li><strong>Inactivo</strong> - Empleados con contrato suspendido</li>
+            <li><strong>Despedido</strong> - Ex empleados</li>
+        </ul>
+
+        <h3>Agregar nuevo empleado</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                Clic en <strong>"+ Agregar Personal"</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                Completar los datos:
+                <ul>
+                    <li><strong>Nombre</strong> - Nombre completo (obligatorio)</li>
+                    <li><strong>RUT</strong> - Con formato XX.XXX.XXX-X</li>
+                    <li><strong>Correo</strong> - Para envío de liquidaciones</li>
+                    <li><strong>Rol</strong> - Atendedor o Supervisor</li>
+                    <li><strong>Grupo</strong> - A o B (solo atendedores)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                Clic en <strong>"Guardar"</strong>
+            </div>
+        </div>
+
+        <h3>Editar empleado</h3>
+        <p>Clic en el ícono de edición (lápiz) en la fila del empleado.</p>
+
+        <h3>Cambiar estado</h3>
+        <p>Para marcar como despedido o inactivo, editar el empleado y cambiar el campo "Estado".</p>
+
+        <div class="info-box">
+            <strong>Nota:</strong> Los empleados despedidos no aparecen en los selectores de turnos o cuadraturas, pero se mantienen en el historial.
+        </div>
+    </div>
+
+    <!-- 7. AUSENCIAS -->
+    <div class="section" id="ausencias">
+        <h2>7. Ausencias y Licencias</h2>
+
+        <p>Registra las faltas y licencias médicas del personal.</p>
+
+        <h3>Registrar ausencia</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                Ir a <strong>Admin → Ausencias</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                Completar el formulario:
+                <ul>
+                    <li><strong>Trabajador</strong> - Seleccionar empleado</li>
+                    <li><strong>Fecha</strong> - Día de inicio</li>
+                    <li><strong>Tipo</strong> - Ausencia o Licencia Médica</li>
+                    <li><strong>Días</strong> - Cantidad de días</li>
+                    <li><strong>Observaciones</strong> - Notas adicionales</li>
+                    <li><strong>Reemplazo</strong> - Quién cubrió (opcional)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                Clic en <strong>"Registrar"</strong>
+            </div>
+        </div>
+
+        <h3>Ver historial</h3>
+        <p>La tabla inferior muestra todas las ausencias del mes seleccionado.</p>
+    </div>
+
+    <!-- 8. PAGOS -->
+    <div class="section" id="pagos">
+        <h2>8. Pagos y Anticipos</h2>
+
+        <p>Gestiona los anticipos de sueldo y aguinaldos.</p>
+
+        <h3>Registrar pago</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                Ir a <strong>Admin → Pagos</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                Completar:
+                <ul>
+                    <li><strong>Trabajador</strong> - Seleccionar empleado</li>
+                    <li><strong>Tipo</strong> - Anticipo o Aguinaldo</li>
+                    <li><strong>Monto</strong> - Cantidad en pesos</li>
+                    <li><strong>Fecha</strong> - Fecha del pago</li>
+                    <li><strong>Comentario</strong> - Nota opcional</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                Clic en <strong>"Registrar Pago"</strong>
+            </div>
+        </div>
+
+        <h3>Ver historial</h3>
+        <p>La tabla muestra los pagos del mes con el total al final.</p>
+
+        <div class="warning-box">
+            <strong>Importante:</strong> Los anticipos se descuentan automáticamente en el cálculo de liquidaciones.
+        </div>
+    </div>
+
+    <!-- 9. LIQUIDACIONES -->
+    <div class="section" id="liquidaciones">
+        <h2>9. Liquidaciones</h2>
+
+        <p>Permite separar y enviar liquidaciones de sueldo por email.</p>
+
+        <h3>Enviar liquidaciones</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                Ir a <strong>Admin → Liquidaciones</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <strong>Subir PDF consolidado</strong><br>
+                El PDF debe tener una página por empleado con el RUT visible.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <strong>Revisar detección</strong><br>
+                El sistema detecta automáticamente el RUT de cada página y lo asocia al empleado.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <strong>Corregir si es necesario</strong><br>
+                Si algún RUT no fue detectado, asignar manualmente.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+                <strong>Clic en "Enviar"</strong><br>
+                Cada empleado recibirá su liquidación en el correo registrado.
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Requisitos:</strong>
+            <ul>
+                <li>Los empleados deben tener RUT y correo registrados</li>
+                <li>El PDF debe tener una hoja por persona</li>
+                <li>El RUT debe estar visible en cada página</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 10. IMPORTAR -->
+    <div class="section" id="importar">
+        <h2>10. Importar desde Excel</h2>
+
+        <p>Permite cargar datos históricos desde archivos Excel.</p>
+
+        <h3>Importar cuadraturas</h3>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                Ir a <strong>Admin → Importar Datos</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <strong>Subir archivo Excel</strong><br>
+                El archivo debe tener hojas numeradas (01, 02, ... 31) para cada día.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <strong>Seleccionar modo "Cuadraturas"</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <strong>Verificar mes y año</strong><br>
+                El sistema intenta detectarlo del nombre del archivo.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+                <strong>Revisar vista previa</strong><br>
+                Los nombres en rojo no tienen match en el sistema. Asignar manualmente o crear nuevo empleado.
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">6</div>
+            <div class="step-content">
+                <strong>Clic en "Importar"</strong>
+            </div>
+        </div>
+
+        <h3>Importar ausencias</h3>
+        <p>Mismo proceso pero seleccionando modo "Ausencias" y eligiendo la hoja que contiene los datos.</p>
+
+        <div class="warning-box">
+            <strong>Antes de importar:</strong> Verificar que no existan datos duplicados del mismo período.
+        </div>
+    </div>
+
+    <!-- 11. TIPS -->
+    <div class="section" id="tips">
+        <h2>11. Consejos y Atajos</h2>
+
+        <h3>Modo Oscuro</h3>
+        <p>El sistema soporta modo oscuro. Para cambiar:</p>
+        <ul>
+            <li>Clic en el ícono de tema en el menú lateral</li>
+            <li>Seleccionar: Claro, Oscuro o Sistema</li>
+        </ul>
+
+        <h3>Atajos de teclado</h3>
+        <table>
+            <tr>
+                <th>Acción</th>
+                <th>Atajo</th>
+            </tr>
+            <tr>
+                <td>Cerrar modal</td>
+                <td><code>Esc</code></td>
+            </tr>
+            <tr>
+                <td>Confirmar</td>
+                <td><code>Enter</code></td>
+            </tr>
+        </table>
+
+        <h3>Formato de montos</h3>
+        <p>Los campos de dinero aceptan números con o sin puntos. El sistema formatea automáticamente con puntos de miles.</p>
+        <p>Ejemplo: Escribir "150000" se muestra como "150.000"</p>
+
+        <h3>Exportar datos</h3>
+        <p>En la mayoría de las vistas puedes exportar a Excel usando el botón correspondiente.</p>
+
+        <h3>Soporte</h3>
+        <p>Para reportar problemas o solicitar ayuda, contactar al administrador del sistema.</p>
+    </div>
+
+    <div class="footer">
+        <p>Sistema de Gestión EDS - Manual de Usuario v1.0</p>
+        <p>Marzo 2026</p>
+    </div>
+
+</body>
+</html>

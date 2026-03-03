@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación Técnica - Sistema de Gestión EDS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #fff;
+            padding: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .cover {
+            text-align: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 50px;
+        }
+
+        .cover h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .cover .subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .cover .badge {
+            display: inline-block;
+            background: #ef4444;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 20px;
+        }
+
+        .toc {
+            background: #f8f8f8;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            columns: 2;
+            column-gap: 30px;
+        }
+
+        .toc h2 {
+            margin-bottom: 15px;
+            color: #1e293b;
+            column-span: all;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            padding: 5px 0;
+            break-inside: avoid;
+        }
+
+        .toc a {
+            color: #333;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .toc a:hover {
+            color: #3b82f6;
+        }
+
+        .section {
+            margin-bottom: 45px;
+        }
+
+        .section h2 {
+            font-size: 22px;
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3b82f6;
+        }
+
+        .section h3 {
+            font-size: 17px;
+            color: #334155;
+            margin: 25px 0 12px;
+        }
+
+        .section h4 {
+            font-size: 14px;
+            color: #64748b;
+            margin: 18px 0 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        p {
+            margin-bottom: 12px;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 15px 0;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .keyword { color: #c084fc; }
+        .string { color: #86efac; }
+        .comment { color: #64748b; }
+        .type { color: #7dd3fc; }
+        .number { color: #fcd34d; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .tech-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tech-item strong {
+            display: block;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .tech-item span {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .diagram-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+
+        .note-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+        }
+
+        .file-tree {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .file-tree .folder { color: #7dd3fc; }
+        .file-tree .file { color: #86efac; }
+        .file-tree .comment { color: #64748b; }
+
+        .api-endpoint {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .api-endpoint .header {
+            background: #1e293b;
+            color: white;
+            padding: 10px 15px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .api-endpoint .method {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .api-endpoint .method.post { background: #22c55e; }
+        .api-endpoint .method.get { background: #3b82f6; }
+        .api-endpoint .method.delete { background: #ef4444; }
+
+        .api-endpoint .body {
+            padding: 15px;
+        }
+
+        .er-table {
+            background: #f8fafc;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .er-table .table-name {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 12px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .er-table .columns {
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+
+        .er-table .column {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .er-table .column:last-child {
+            border-bottom: none;
+        }
+
+        .er-table .pk { color: #f59e0b; font-weight: 600; }
+        .er-table .fk { color: #8b5cf6; }
+        .er-table .type { color: #64748b; font-size: 11px; }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .flow-box {
+            background: white;
+            border: 2px solid #3b82f6;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            color: #3b82f6;
+            font-size: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #94a3b8;
+            font-size: 12px;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 50px;
+        }
+
+        @media print {
+            body { padding: 20px; }
+            .cover { page-break-after: always; }
+            .section { page-break-inside: avoid; }
+            pre { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA -->
+    <div class="cover">
+        <h1>Documentación Técnica</h1>
+        <p class="subtitle">Sistema de Gestión EDS - Arquitectura y Funcionamiento Interno</p>
+        <span class="badge">Documento Interno</span>
+    </div>
+
+    <!-- ÍNDICE -->
+    <div class="toc">
+        <h2>Contenido</h2>
+        <ul>
+            <li><a href="#overview">1. Visión General</a></li>
+            <li><a href="#stack">2. Stack Tecnológico</a></li>
+            <li><a href="#estructura">3. Estructura del Proyecto</a></li>
+            <li><a href="#database">4. Base de Datos</a></li>
+            <li><a href="#auth">5. Autenticación</a></li>
+            <li><a href="#pages">6. Páginas y Rutas</a></li>
+            <li><a href="#components">7. Componentes</a></li>
+            <li><a href="#lib">8. Librerías y Utils</a></li>
+            <li><a href="#api">9. API Routes</a></li>
+            <li><a href="#flows">10. Flujos Principales</a></li>
+            <li><a href="#deploy">11. Despliegue</a></li>
+            <li><a href="#security">12. Seguridad</a></li>
+        </ul>
+    </div>
+
+    <!-- 1. VISIÓN GENERAL -->
+    <div class="section" id="overview">
+        <h2>1. Visión General</h2>
+
+        <p>El Sistema de Gestión EDS es una aplicación web full-stack para administrar operaciones de estaciones de servicio. Maneja cuadraturas de caja, turnos de personal, RRHH y reportes.</p>
+
+        <h3>Arquitectura General</h3>
+
+        <!-- Diagrama Visual de Arquitectura -->
+        <div style="padding: 30px; background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; margin: 20px 0;">
+
+            <!-- CAPA 1: Cliente -->
+            <div style="background: white; border: 2px solid #0ea5e9; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <span style="background: #0ea5e9; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">CLIENTE</span>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                        <div style="font-weight: 600; color: #0369a1;">Browser</div>
+                        <div style="font-size: 11px; color: #64748b;">Chrome, Safari, Edge</div>
+                    </div>
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                        <div style="font-weight: 600; color: #0369a1;">React 19</div>
+                        <div style="font-size: 11px; color: #64748b;">UI Components</div>
+                    </div>
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                        <div style="font-weight: 600; color: #0369a1;">Tailwind CSS</div>
+                        <div style="font-size: 11px; color: #64748b;">Estilos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flecha -->
+            <div style="text-align: center; margin: 10px 0;">
+                <div style="display: inline-block; background: #64748b; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px;">
+                    ↓ HTTPS ↓
+                </div>
+            </div>
+
+            <!-- CAPA 2: Vercel -->
+            <div style="background: white; border: 2px solid #000; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <span style="background: #000; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">VERCEL</span>
+                </div>
+                <div style="background: #f8f8f8; border-radius: 8px; padding: 15px;">
+                    <div style="text-align: center; font-weight: 600; margin-bottom: 12px; color: #333;">Next.js 16 Server</div>
+                    <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                        <div style="background: white; border: 1px solid #e5e5e5; padding: 10px 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-weight: 600; font-size: 13px;">Middleware</div>
+                            <div style="font-size: 10px; color: #64748b;">Auth Guard</div>
+                        </div>
+                        <div style="background: white; border: 1px solid #e5e5e5; padding: 10px 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-weight: 600; font-size: 13px;">API Routes</div>
+                            <div style="font-size: 10px; color: #64748b;">Nodemailer</div>
+                        </div>
+                        <div style="background: white; border: 1px solid #e5e5e5; padding: 10px 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-weight: 600; font-size: 13px;">Pages</div>
+                            <div style="font-size: 10px; color: #64748b;">SSR + CSR</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flecha -->
+            <div style="text-align: center; margin: 10px 0;">
+                <div style="display: inline-block; background: #64748b; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px;">
+                    ↓ HTTPS ↓
+                </div>
+            </div>
+
+            <!-- CAPA 3: Supabase -->
+            <div style="background: white; border: 2px solid #3ecf8e; border-radius: 12px; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <span style="background: #3ecf8e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">SUPABASE</span>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px;">
+                        <div style="font-size: 20px; margin-bottom: 5px;">🗄️</div>
+                        <div style="font-weight: 600; color: #166534;">PostgreSQL</div>
+                        <div style="font-size: 10px; color: #64748b;">Base de datos</div>
+                    </div>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px;">
+                        <div style="font-size: 20px; margin-bottom: 5px;">🔐</div>
+                        <div style="font-weight: 600; color: #166534;">Auth</div>
+                        <div style="font-size: 10px; color: #64748b;">Google OAuth</div>
+                    </div>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px;">
+                        <div style="font-size: 20px; margin-bottom: 5px;">📁</div>
+                        <div style="font-weight: 600; color: #166534;">Storage</div>
+                        <div style="font-size: 10px; color: #64748b;">PDFs</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 2. STACK TECNOLÓGICO -->
+    <div class="section" id="stack">
+        <h2>2. Stack Tecnológico</h2>
+
+        <h3>Core</h3>
+        <div class="tech-stack">
+            <div class="tech-item">
+                <strong>Next.js 16.1.1</strong>
+                <span>Framework React fullstack con App Router</span>
+            </div>
+            <div class="tech-item">
+                <strong>React 19.2.3</strong>
+                <span>Librería de UI</span>
+            </div>
+            <div class="tech-item">
+                <strong>TypeScript 5</strong>
+                <span>Tipado estático</span>
+            </div>
+            <div class="tech-item">
+                <strong>Tailwind CSS 4</strong>
+                <span>Framework de estilos utility-first</span>
+            </div>
+            <div class="tech-item">
+                <strong>Supabase</strong>
+                <span>Backend as a Service (DB, Auth, Storage)</span>
+            </div>
+            <div class="tech-item">
+                <strong>Vercel</strong>
+                <span>Hosting y deployment</span>
+            </div>
+        </div>
+
+        <h3>Librerías Principales</h3>
+        <table>
+            <tr>
+                <th>Librería</th>
+                <th>Versión</th>
+                <th>Uso</th>
+            </tr>
+            <tr>
+                <td><code>@supabase/supabase-js</code></td>
+                <td>2.x</td>
+                <td>Cliente Supabase para browser</td>
+            </tr>
+            <tr>
+                <td><code>@supabase/ssr</code></td>
+                <td>0.x</td>
+                <td>SSR con Supabase</td>
+            </tr>
+            <tr>
+                <td><code>nodemailer</code></td>
+                <td>7.0.12</td>
+                <td>Envío de emails (liquidaciones)</td>
+            </tr>
+            <tr>
+                <td><code>xlsx</code></td>
+                <td>0.18.5</td>
+                <td>Lectura/escritura de Excel</td>
+            </tr>
+            <tr>
+                <td><code>pdf-lib</code></td>
+                <td>1.17.1</td>
+                <td>Manipulación de PDFs</td>
+            </tr>
+            <tr>
+                <td><code>pdfjs-dist</code></td>
+                <td>5.4.530</td>
+                <td>Extracción de texto de PDFs</td>
+            </tr>
+            <tr>
+                <td><code>lucide-react</code></td>
+                <td>0.562</td>
+                <td>Iconos</td>
+            </tr>
+            <tr>
+                <td><code>sileo</code></td>
+                <td>0.1.4</td>
+                <td>Toast notifications</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 3. ESTRUCTURA DEL PROYECTO -->
+    <div class="section" id="estructura">
+        <h2>3. Estructura del Proyecto</h2>
+
+        <!-- Estructura Visual del Proyecto -->
+        <div style="background: #1e293b; border-radius: 12px; padding: 25px; color: #e2e8f0;">
+
+            <!-- Root -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span style="font-size: 18px;">📁</span>
+                    <span style="font-weight: 600; font-size: 16px;">Raíz del Proyecto</span>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: 26px;">
+                    <span style="background: #334155; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: monospace;">middleware.ts</span>
+                    <span style="background: #334155; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: monospace;">next.config.ts</span>
+                    <span style="background: #334155; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: monospace;">package.json</span>
+                    <span style="background: #334155; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: monospace;">tsconfig.json</span>
+                </div>
+            </div>
+
+            <!-- app/ -->
+            <div style="background: #334155; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span style="font-size: 16px;">📂</span>
+                    <span style="font-weight: 600; color: #7dd3fc;">app/</span>
+                    <span style="font-size: 11px; color: #94a3b8; margin-left: 8px;">Next.js App Router</span>
+                </div>
+
+                <!-- Dashboard pages -->
+                <div style="margin-left: 20px; margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">📂 dashboard/</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin-left: 15px;">
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #86efac;">page.tsx</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Dashboard</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #86efac;">layout.tsx</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Sidebar</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">turnos/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Generador</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">cuadraturas/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Historial</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">dia/[id]/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Editar</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">personal/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">CRUD</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">ausencias/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Faltas</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">pagos/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Anticipos</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">liquidaciones/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Envío</span>
+                        </div>
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                            <span style="color: #fcd34d;">importar/</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">Excel</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API -->
+                <div style="margin-left: 20px; margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">📂 api/</div>
+                    <div style="margin-left: 15px;">
+                        <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px; display: inline-block;">
+                            <span style="color: #f0abfc;">enviar-liquidacion/route.ts</span>
+                            <span style="color: #64748b; display: block; font-size: 10px;">API Email (Nodemailer)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other app files -->
+                <div style="margin-left: 20px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #86efac;">login/page.tsx</span>
+                        <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #86efac;">layout.tsx</span>
+                        <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #86efac;">page.tsx</span>
+                        <span style="background: #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #67e8f9;">globals.css</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- components/ -->
+            <div style="background: #334155; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span style="font-size: 16px;">📂</span>
+                    <span style="font-weight: 600; color: #7dd3fc;">components/</span>
+                    <span style="font-size: 11px; color: #94a3b8; margin-left: 8px;">Componentes React</span>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px;">
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">Sidebar.tsx</span>
+                        <span style="color: #64748b; font-size: 10px; margin-left: 6px;">Menú lateral</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">MonthPicker.tsx</span>
+                        <span style="color: #64748b; font-size: 10px; margin-left: 6px;">Selector mes</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">MoneyInput.tsx</span>
+                        <span style="color: #64748b; font-size: 10px; margin-left: 6px;">Input dinero</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">ConfirmModal.tsx</span>
+                        <span style="color: #64748b; font-size: 10px; margin-left: 6px;">Modal</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">ThemeToggle.tsx</span>
+                        <span style="color: #64748b; font-size: 10px; margin-left: 6px;">Tema</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- lib/ -->
+            <div style="background: #334155; border-radius: 8px; padding: 15px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <span style="font-size: 16px;">📂</span>
+                    <span style="font-weight: 600; color: #7dd3fc;">lib/</span>
+                    <span style="font-size: 11px; color: #94a3b8; margin-left: 8px;">Utilidades y Helpers</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; margin-left: 20px;">
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">supabase.ts</span>
+                        <span style="color: #64748b; display: block; font-size: 10px;">Cliente browser</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">supabase-server.ts</span>
+                        <span style="color: #64748b; display: block; font-size: 10px;">Cliente server</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">useMesFiltro.ts</span>
+                        <span style="color: #64748b; display: block; font-size: 10px;">Hook filtro mes</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">toast.ts</span>
+                        <span style="color: #64748b; display: block; font-size: 10px;">Notificaciones</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">turnosGenerator.ts</span>
+                        <span style="color: #64748b; display: block; font-size: 10px;">Lógica turnos</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 6px 10px; border-radius: 4px; font-size: 11px;">
+                        <span style="color: #86efac;">turnosTypes.ts</span>
+                        <span style="color: #64748b; display: block; font-size: 10px;">Tipos TS</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 4. BASE DE DATOS -->
+    <div class="section" id="database">
+        <h2>4. Base de Datos</h2>
+
+        <p>PostgreSQL en Supabase con las siguientes tablas:</p>
+
+        <h3>Diagrama Entidad-Relación</h3>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+
+            <div class="er-table">
+                <div class="table-name">personal</div>
+                <div class="columns">
+                    <div class="column"><span class="pk">id</span> <span class="type">UUID PK</span></div>
+                    <div class="column">nombre <span class="type">TEXT</span></div>
+                    <div class="column">rut <span class="type">TEXT</span></div>
+                    <div class="column">correo <span class="type">TEXT</span></div>
+                    <div class="column">activo <span class="type">BOOLEAN</span></div>
+                    <div class="column">estado <span class="type">TEXT</span></div>
+                    <div class="column">rol <span class="type">TEXT</span></div>
+                    <div class="column">grupo <span class="type">TEXT</span></div>
+                    <div class="column">created_at <span class="type">TIMESTAMPTZ</span></div>
+                </div>
+            </div>
+
+            <div class="er-table">
+                <div class="table-name">turnos</div>
+                <div class="columns">
+                    <div class="column"><span class="pk">id</span> <span class="type">UUID PK</span></div>
+                    <div class="column">fecha <span class="type">DATE</span></div>
+                    <div class="column">turno <span class="type">TEXT</span></div>
+                    <div class="column">responsable <span class="type">TEXT</span></div>
+                    <div class="column">depositos <span class="type">JSONB</span></div>
+                    <div class="column">vouchers <span class="type">JSONB</span></div>
+                    <div class="column">gastos <span class="type">JSONB</span></div>
+                    <div class="column">total_ventas <span class="type">NUMERIC</span></div>
+                    <div class="column">diferencia <span class="type">NUMERIC</span></div>
+                </div>
+            </div>
+
+            <div class="er-table">
+                <div class="table-name">turnos_generados</div>
+                <div class="columns">
+                    <div class="column"><span class="pk">id</span> <span class="type">UUID PK</span></div>
+                    <div class="column"><span class="fk">personal_id</span> <span class="type">UUID FK</span></div>
+                    <div class="column">fecha <span class="type">DATE</span></div>
+                    <div class="column">turno <span class="type">TEXT (M/T/N/L)</span></div>
+                    <div class="column">mes <span class="type">INTEGER</span></div>
+                    <div class="column">anio <span class="type">INTEGER</span></div>
+                </div>
+            </div>
+
+            <div class="er-table">
+                <div class="table-name">ausencias</div>
+                <div class="columns">
+                    <div class="column"><span class="pk">id</span> <span class="type">UUID PK</span></div>
+                    <div class="column"><span class="fk">personal_id</span> <span class="type">UUID FK</span></div>
+                    <div class="column">fecha <span class="type">DATE</span></div>
+                    <div class="column">tipo <span class="type">TEXT</span></div>
+                    <div class="column">dias <span class="type">INTEGER</span></div>
+                    <div class="column">observaciones <span class="type">TEXT</span></div>
+                    <div class="column">reemplazo <span class="type">TEXT</span></div>
+                </div>
+            </div>
+
+            <div class="er-table">
+                <div class="table-name">pagos_personal</div>
+                <div class="columns">
+                    <div class="column"><span class="pk">id</span> <span class="type">UUID PK</span></div>
+                    <div class="column"><span class="fk">personal_id</span> <span class="type">UUID FK</span></div>
+                    <div class="column">fecha <span class="type">DATE</span></div>
+                    <div class="column">tipo <span class="type">TEXT</span></div>
+                    <div class="column">monto <span class="type">NUMERIC</span></div>
+                    <div class="column">nombre_personal <span class="type">TEXT</span></div>
+                    <div class="column">comentario <span class="type">TEXT</span></div>
+                </div>
+            </div>
+
+            <div class="er-table">
+                <div class="table-name">liquidaciones</div>
+                <div class="columns">
+                    <div class="column"><span class="pk">id</span> <span class="type">UUID PK</span></div>
+                    <div class="column"><span class="fk">personal_id</span> <span class="type">UUID FK</span></div>
+                    <div class="column">mes <span class="type">INTEGER</span></div>
+                    <div class="column">anio <span class="type">INTEGER</span></div>
+                    <div class="column">archivo_path <span class="type">TEXT</span></div>
+                    <div class="column">estado <span class="type">TEXT</span></div>
+                </div>
+            </div>
+
+        </div>
+
+        <h3>Estructura JSONB: gastos</h3>
+        <pre><code>{
+  "bencinaEnzo": <span class="number">15000</span>,
+  "perrosMuertos": <span class="number">0</span>,
+  "turnoExtra": <span class="number">25000</span>,
+  "horasExtras": <span class="number">0</span>,
+  "comisionesPromocion": <span class="number">5000</span>,
+  "comisionesLubricantes": <span class="number">3000</span>,
+  "tercerDomingo": <span class="number">0</span>,
+  "cuartoDomingo": <span class="number">0</span>,
+  "quintoDomingo": <span class="number">0</span>,
+  "valeEasyPay": <span class="number">0</span>,
+  "otros": <span class="number">0</span>
+}</code></pre>
+
+        <h3>Estructura JSONB: depositos/vouchers</h3>
+        <pre><code>[
+  { "id": <span class="string">"uuid-1"</span>, "monto": <span class="number">150000</span>, "referencia": <span class="string">"Depósito BCI"</span> },
+  { "id": <span class="string">"uuid-2"</span>, "monto": <span class="number">80000</span>, "referencia": <span class="string">"Monedas/Efectivo"</span> }
+]</code></pre>
+    </div>
+
+    <!-- 5. AUTENTICACIÓN -->
+    <div class="section" id="auth">
+        <h2>5. Autenticación</h2>
+
+        <h3>Flujo de autenticación</h3>
+        <div class="flow-diagram">
+            <div class="flow-box">Usuario accede<br>/dashboard</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-box">Middleware<br>verifica sesión</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-box">¿Sesión válida?</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-box">Sí: Mostrar<br>dashboard</div>
+        </div>
+        <div class="flow-diagram">
+            <div class="flow-box">¿Sesión válida?</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-box">No: Redirect<br>/login</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-box">Login con<br>Supabase Auth</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-box">Redirect a<br>/dashboard</div>
+        </div>
+
+        <h3>Middleware</h3>
+        <pre><code><span class="comment">// middleware.ts</span>
+<span class="keyword">export async function</span> middleware(request: NextRequest) {
+  <span class="keyword">const</span> supabase = createServerClient(...)
+  <span class="keyword">const</span> { data: { session } } = <span class="keyword">await</span> supabase.auth.getSession()
+
+  <span class="keyword">if</span> (!session && request.nextUrl.pathname.startsWith(<span class="string">'/dashboard'</span>)) {
+    <span class="keyword">return</span> NextResponse.redirect(<span class="keyword">new</span> URL(<span class="string">'/login'</span>, request.url))
+  }
+}</code></pre>
+
+        <h3>Rutas protegidas</h3>
+        <ul>
+            <li><code>/dashboard/*</code> - Requiere sesión</li>
+            <li><code>/api/*</code> - Requiere sesión (retorna 401)</li>
+            <li><code>/login</code> - Pública</li>
+        </ul>
+    </div>
+
+    <!-- 6. PÁGINAS Y RUTAS -->
+    <div class="section" id="pages">
+        <h2>6. Páginas y Rutas</h2>
+
+        <table>
+            <tr>
+                <th>Ruta</th>
+                <th>Archivo</th>
+                <th>Descripción</th>
+            </tr>
+            <tr>
+                <td><code>/</code></td>
+                <td>app/page.tsx</td>
+                <td>Redirect a /dashboard</td>
+            </tr>
+            <tr>
+                <td><code>/login</code></td>
+                <td>app/login/page.tsx</td>
+                <td>Página de autenticación</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard</code></td>
+                <td>app/dashboard/page.tsx</td>
+                <td>Dashboard principal con KPIs</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/turnos</code></td>
+                <td>app/dashboard/turnos/page.tsx</td>
+                <td>Generador de turnos mensuales</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/cuadraturas</code></td>
+                <td>app/dashboard/cuadraturas/page.tsx</td>
+                <td>Historial de cuadraturas</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/cuadraturas/nuevo</code></td>
+                <td>app/dashboard/cuadraturas/nuevo/page.tsx</td>
+                <td>Crear nueva cuadratura</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/dia/[id]</code></td>
+                <td>app/dashboard/dia/[id]/page.tsx</td>
+                <td>Editar cuadratura específica</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/personal</code></td>
+                <td>app/dashboard/personal/page.tsx</td>
+                <td>CRUD de empleados</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/ausencias</code></td>
+                <td>app/dashboard/ausencias/page.tsx</td>
+                <td>Registro de ausencias</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/pagos</code></td>
+                <td>app/dashboard/pagos/page.tsx</td>
+                <td>Anticipos y aguinaldos</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/liquidaciones</code></td>
+                <td>app/dashboard/liquidaciones/page.tsx</td>
+                <td>Envío de liquidaciones</td>
+            </tr>
+            <tr>
+                <td><code>/dashboard/importar</code></td>
+                <td>app/dashboard/importar/page.tsx</td>
+                <td>Importar desde Excel</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 7. COMPONENTES -->
+    <div class="section" id="components">
+        <h2>7. Componentes</h2>
+
+        <h3>Sidebar</h3>
+        <p>Menú lateral de navegación. Agrupa secciones: Principal, Operación, Admin.</p>
+        <pre><code><span class="keyword">interface</span> <span class="type">SidebarProps</span> {
+  onClose?: () => <span class="type">void</span>  <span class="comment">// Para cerrar en mobile</span>
+}</code></pre>
+
+        <h3>MonthPicker</h3>
+        <p>Selector de mes con calendario desplegable.</p>
+        <pre><code><span class="keyword">interface</span> <span class="type">MonthPickerProps</span> {
+  value: <span class="type">string</span>           <span class="comment">// "YYYY-MM" o "YYYY-MM-DD"</span>
+  onChange: (v: <span class="type">string</span>) => <span class="type">void</span>
+}</code></pre>
+
+        <h3>MoneyInput</h3>
+        <p>Input con formato de moneda chilena (puntos de miles).</p>
+        <pre><code><span class="keyword">interface</span> <span class="type">MoneyInputProps</span> {
+  value: <span class="type">number</span> | <span class="type">string</span>
+  onChange: (v: <span class="type">number</span>) => <span class="type">void</span>
+  placeholder?: <span class="type">string</span>
+  className?: <span class="type">string</span>
+  disabled?: <span class="type">boolean</span>
+  allowEmpty?: <span class="type">boolean</span>
+}</code></pre>
+
+        <h3>ConfirmModal</h3>
+        <p>Modal de confirmación con variantes de estilo.</p>
+        <pre><code><span class="keyword">interface</span> <span class="type">ConfirmModalProps</span> {
+  open: <span class="type">boolean</span>
+  onConfirm: () => <span class="type">void</span>
+  onCancel: () => <span class="type">void</span>
+  title: <span class="type">string</span>
+  message: <span class="type">string</span>
+  confirmText?: <span class="type">string</span>
+  variant?: <span class="string">'danger'</span> | <span class="string">'warning'</span> | <span class="string">'info'</span>
+}</code></pre>
+    </div>
+
+    <!-- 8. LIBRERÍAS Y UTILS -->
+    <div class="section" id="lib">
+        <h2>8. Librerías y Utils</h2>
+
+        <h3>useMesFiltro</h3>
+        <p>Hook para filtro de mes persistente en localStorage.</p>
+        <pre><code><span class="keyword">const</span> [mes, setMes, isReady] = useMesFiltro()
+<span class="comment">// mes: "2026-03"</span>
+<span class="comment">// isReady: true cuando se cargó del localStorage</span>
+
+<span class="keyword">const</span> { startDate, endDate } = getFechaRango(mes)
+<span class="comment">// startDate: "2026-03-01"</span>
+<span class="comment">// endDate: "2026-03-31"</span></code></pre>
+
+        <h3>turnosGenerator</h3>
+        <p>Genera asignaciones de turnos para un mes.</p>
+        <pre><code><span class="keyword">const</span> result = generateTurnos({
+  personal: [...],
+  year: <span class="number">2026</span>,
+  month: <span class="number">3</span>,
+  supervisorMañana: <span class="string">'uuid'</span>,
+  diaCambioSupervisor: <span class="number">15</span>,
+  incluirQuintoDomingo: <span class="keyword">true</span>
+})
+<span class="comment">// result.assignments: Map&lt;string, ShiftAssignment[]&gt;</span>
+<span class="comment">// result.errors: string[]</span></code></pre>
+
+        <h3>toast</h3>
+        <p>Wrapper para notificaciones.</p>
+        <pre><code>toast.success(<span class="string">'Título'</span>, <span class="string">'Mensaje'</span>)
+toast.error(<span class="string">'Error'</span>, <span class="string">'Descripción'</span>)
+toast.warning(<span class="string">'Advertencia'</span>, <span class="string">'Detalle'</span>)
+toast.info(<span class="string">'Info'</span>, <span class="string">'Información'</span>)</code></pre>
+    </div>
+
+    <!-- 9. API ROUTES -->
+    <div class="section" id="api">
+        <h2>9. API Routes</h2>
+
+        <div class="api-endpoint">
+            <div class="header">
+                <span class="method post">POST</span>
+                <code>/api/enviar-liquidacion</code>
+            </div>
+            <div class="body">
+                <p><strong>Descripción:</strong> Envía liquidación por email usando Nodemailer.</p>
+                <p><strong>Body:</strong></p>
+                <pre><code>{
+  "to": <span class="string">"empleado@email.com"</span>,
+  "subject": <span class="string">"Liquidación Marzo 2026"</span>,
+  "pdfBase64": <span class="string">"JVBERi0xLjQK..."</span>,
+  "filename": <span class="string">"liquidacion_marzo_2026.pdf"</span>
+}</code></pre>
+                <p><strong>Response:</strong></p>
+                <pre><code>{ "success": <span class="keyword">true</span> }</code></pre>
+            </div>
+        </div>
+
+        <div class="note-box">
+            <strong>Configuración SMTP:</strong> Usa variables de entorno <code>EMAIL_USER</code> y <code>EMAIL_PASS</code> para Gmail.
+        </div>
+    </div>
+
+    <!-- 10. FLUJOS PRINCIPALES -->
+    <div class="section" id="flows">
+        <h2>10. Flujos Principales</h2>
+
+        <h3>Flujo: Crear Cuadratura</h3>
+        <div class="diagram-box">
+1. Usuario navega a /dashboard/cuadraturas/nuevo
+2. Selecciona fecha, turno, responsable
+3. Ingresa ventas (combustible + tienda)
+4. Agrega depósitos (array JSONB)
+5. Agrega vouchers (array JSONB)
+6. Ingresa gastos (objeto JSONB)
+7. Sistema calcula automáticamente:
+   - total_no_efectivo = tarjetas + vouchers + gastos
+   - efectivo_esperado = ventas - total_no_efectivo
+   - diferencia = efectivo_real - efectivo_esperado
+8. INSERT en tabla 'turnos'
+9. Redirect a historial con toast de éxito
+        </div>
+
+        <h3>Flujo: Importar Excel</h3>
+        <div class="diagram-box">
+1. Usuario sube archivo .xlsx
+2. Sistema detecta modo (cuadraturas vs ausencias) por nombres de hojas
+3. Auto-detecta mes/año del nombre del archivo
+4. Para cuadraturas:
+   a. Lee hojas 01-31 (días del mes)
+   b. Extrae turnos por columnas (A=Mañana, B=Tarde, C=Noche)
+   c. Lee "RESUMEN DE GASTOS" para gastos adicionales
+   d. Busca match de nombres en BD (exacto → parcial → palabra)
+5. Muestra preview con validación (rojo = sin match)
+6. Usuario corrige manualmente nombres no encontrados
+7. INSERT batch en tabla correspondiente
+        </div>
+
+        <h3>Flujo: Enviar Liquidaciones</h3>
+        <div class="diagram-box">
+1. Usuario sube PDF consolidado (1 página por persona)
+2. pdf-lib separa páginas individuales
+3. pdfjs-dist extrae texto de cada página
+4. Regex detecta RUT: /\d{1,2}\.\d{3}\.\d{3}-[0-9kK]/
+5. Match RUT con tabla 'personal'
+6. Preview con asignaciones (usuario puede corregir)
+7. Para cada empleado:
+   a. Sube PDF individual a Storage (nominas/{id}/{año}_{mes}.pdf)
+   b. INSERT en tabla 'liquidaciones'
+   c. POST /api/enviar-liquidacion (Nodemailer)
+8. UI actualiza estado a "ENVIADO"
+        </div>
+    </div>
+
+    <!-- 11. DESPLIEGUE -->
+    <div class="section" id="deploy">
+        <h2>11. Despliegue</h2>
+
+        <h3>Variables de Entorno</h3>
+        <table>
+            <tr>
+                <th>Variable</th>
+                <th>Descripción</th>
+            </tr>
+            <tr>
+                <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+                <td>URL del proyecto Supabase</td>
+            </tr>
+            <tr>
+                <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+                <td>API Key pública de Supabase</td>
+            </tr>
+            <tr>
+                <td><code>EMAIL_USER</code></td>
+                <td>Email para envío (Gmail)</td>
+            </tr>
+            <tr>
+                <td><code>EMAIL_PASS</code></td>
+                <td>App Password de Gmail</td>
+            </tr>
+        </table>
+
+        <h3>Deploy en Vercel</h3>
+        <pre><code><span class="comment"># Conectar repo a Vercel</span>
+vercel link
+
+<span class="comment"># Configurar variables de entorno en Vercel Dashboard</span>
+
+<span class="comment"># Deploy</span>
+vercel --prod</code></pre>
+
+        <h3>Comandos de desarrollo</h3>
+        <pre><code><span class="comment"># Instalar dependencias</span>
+npm install
+
+<span class="comment"># Desarrollo local</span>
+npm run dev
+
+<span class="comment"># Build de producción</span>
+npm run build
+
+<span class="comment"># Verificar tipos</span>
+npx tsc --noEmit</code></pre>
+    </div>
+
+    <!-- 12. SEGURIDAD -->
+    <div class="section" id="security">
+        <h2>12. Seguridad</h2>
+
+        <h3>Medidas implementadas</h3>
+        <ul>
+            <li><strong>Middleware de Auth:</strong> Protege rutas /dashboard/* y /api/*</li>
+            <li><strong>Row Level Security (RLS):</strong> En Supabase para tablas sensibles</li>
+            <li><strong>Validación de entrada:</strong> Sanitización de datos en formularios</li>
+            <li><strong>HTTPS:</strong> Forzado por Vercel</li>
+            <li><strong>Cookies HttpOnly:</strong> Sesiones manejadas por Supabase</li>
+        </ul>
+
+        <h3>Validaciones de API</h3>
+        <pre><code><span class="comment">// /api/enviar-liquidacion</span>
+<span class="keyword">if</span> (!to || !subject || !pdfBase64) {
+  <span class="keyword">return</span> NextResponse.json({ error: <span class="string">'Faltan campos'</span> }, { status: <span class="number">400</span> })
+}
+
+<span class="comment">// Validación de email</span>
+<span class="keyword">const</span> emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+<span class="keyword">if</span> (!emailRegex.test(to)) {
+  <span class="keyword">return</span> NextResponse.json({ error: <span class="string">'Email inválido'</span> }, { status: <span class="number">400</span> })
+}</code></pre>
+
+        <div class="warning-box">
+            <strong>Pendiente:</strong> Implementar rate limiting en API de envío de emails para prevenir abuso.
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Documentación Técnica - Sistema de Gestión EDS v1.0</p>
+        <p>Marzo 2026 - Documento Interno</p>
+    </div>
+
+</body>
+</html>

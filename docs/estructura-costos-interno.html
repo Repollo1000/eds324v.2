@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estructura de Costos - Documento Interno</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #f5f5f5;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #1a1a1a;
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        .confidencial {
+            background: #dc2626;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .section h2 {
+            font-size: 16px;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2 .icon {
+            font-size: 20px;
+        }
+
+        .fase-label {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .fase-actual {
+            background: #22c55e;
+            color: white;
+        }
+
+        .fase-futuro {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .fase-escala {
+            background: #6366f1;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        th {
+            background: #f8f8f8;
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .gratis {
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .costo {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .total-row {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .total-row td {
+            border: none;
+            font-weight: 600;
+        }
+
+        .margen-positivo {
+            color: #22c55e;
+        }
+
+        .margen-negativo {
+            color: #dc2626;
+        }
+
+        .nota {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .nota strong {
+            color: #92400e;
+        }
+
+        .resumen-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .resumen-card {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .resumen-card.destacado {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .resumen-card .valor {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 10px 0 5px;
+        }
+
+        .resumen-card .label {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e5e5e5;
+            z-index: 0;
+        }
+
+        .timeline-item {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .timeline-item .dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e5e5e5;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .timeline-item.active .dot {
+            background: #22c55e;
+            color: white;
+        }
+
+        .timeline-item.next .dot {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .timeline-item .title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .timeline-item .desc {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .decision-box {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .decision-box h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .decision-box ul {
+            margin-left: 20px;
+        }
+
+        .decision-box li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .formula {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .formula .equation {
+            font-size: 18px;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 20px;
+            }
+
+            .section {
+                box-shadow: none;
+                border: 1px solid #e5e5e5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="confidencial">Documento Interno - Confidencial</span>
+        <h1>Estructura de Costos y Proyección Financiera</h1>
+        <p>Sistema de Gestión para Estaciones de Servicio</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">📍</span> Estado Actual del Negocio</h2>
+        <div class="timeline">
+            <div class="timeline-item active">
+                <div class="dot">1</div>
+                <div class="title">Piloto</div>
+                <div class="desc">1 cliente gratis<br>Validando producto</div>
+            </div>
+            <div class="timeline-item next">
+                <div class="dot">2</div>
+                <div class="title">Primeros pagos</div>
+                <div class="desc">1-3 clientes<br>$500k - $1.5M/mes</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot">3</div>
+                <div class="title">Escalar infra</div>
+                <div class="desc">3+ clientes<br>Invertir en servicios</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot">4</div>
+                <div class="title">Crecimiento</div>
+                <div class="desc">10+ clientes<br>Considerar equipo</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>
+            <span class="icon">💰</span> Costos Actuales (Fase Piloto)
+            <span class="fase-label fase-actual">AHORA</span>
+        </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Proveedor</th>
+                    <th>Plan</th>
+                    <th class="text-right">Costo Mensual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hosting Frontend</td>
+                    <td>Vercel</td>
+                    <td>Free (Hobby)</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr>
+                    <td>Base de Datos</td>
+                    <td>Supabase</td>
+                    <td>Free (500MB, 2GB transfer)</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr>
+                    <td>Dominio</td>
+                    <td>-</td>
+                    <td>Usando .vercel.app</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr>
+                    <td>IA / Desarrollo</td>
+                    <td>Claude</td>
+                    <td>Free / Pro personal</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr>
+                    <td>Desarrollador</td>
+                    <td>Yo</td>
+                    <td>Sin sueldo fijo</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3">COSTO TOTAL ACTUAL</td>
+                    <td class="text-right">$0/mes</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="nota">
+            <strong>Estrategia:</strong> Mantener costos en $0 hasta tener al menos 3 clientes pagando.
+            Los planes gratuitos son suficientes para 1-3 estaciones de servicio.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>
+            <span class="icon">📈</span> Costos Proyectados (3+ Clientes)
+            <span class="fase-label fase-futuro">PRÓXIMO</span>
+        </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Proveedor</th>
+                    <th>Plan</th>
+                    <th class="text-right">Costo Mensual (USD)</th>
+                    <th class="text-right">Costo Mensual (CLP)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hosting Frontend</td>
+                    <td>Vercel</td>
+                    <td>Pro</td>
+                    <td class="text-right">$20 USD</td>
+                    <td class="text-right costo">$19.000</td>
+                </tr>
+                <tr>
+                    <td>Base de Datos</td>
+                    <td>Supabase</td>
+                    <td>Pro (8GB, 50GB transfer)</td>
+                    <td class="text-right">$25 USD</td>
+                    <td class="text-right costo">$24.000</td>
+                </tr>
+                <tr>
+                    <td>Dominio .cl</td>
+                    <td>NIC Chile</td>
+                    <td>Anual (prorrateado)</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right costo">$2.000</td>
+                </tr>
+                <tr>
+                    <td>IA Asistente</td>
+                    <td>Claude / OpenAI</td>
+                    <td>Pro</td>
+                    <td class="text-right">$20 USD</td>
+                    <td class="text-right costo">$19.000</td>
+                </tr>
+                <tr>
+                    <td>Email profesional</td>
+                    <td>Google Workspace</td>
+                    <td>Starter</td>
+                    <td class="text-right">$6 USD</td>
+                    <td class="text-right costo">$5.700</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="4">COSTO TOTAL PROYECTADO</td>
+                    <td class="text-right">$69.700/mes</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">* Tipo de cambio estimado: $950 CLP/USD</p>
+    </div>
+
+    <div class="section">
+        <h2>
+            <span class="icon">🚀</span> Costos a Escala (10+ Clientes)
+            <span class="fase-label fase-escala">FUTURO</span>
+        </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Descripción</th>
+                    <th class="text-right">Costo Mensual (CLP)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Vercel Pro</td>
+                    <td>Más builds, más bandwidth</td>
+                    <td class="text-right costo">$19.000</td>
+                </tr>
+                <tr>
+                    <td>Supabase Pro + addon</td>
+                    <td>Más storage, más conexiones</td>
+                    <td class="text-right costo">$50.000</td>
+                </tr>
+                <tr>
+                    <td>Dominio + DNS</td>
+                    <td>Cloudflare Pro</td>
+                    <td class="text-right costo">$5.000</td>
+                </tr>
+                <tr>
+                    <td>Herramientas IA</td>
+                    <td>Claude + APIs</td>
+                    <td class="text-right costo">$40.000</td>
+                </tr>
+                <tr>
+                    <td>Email + Workspace</td>
+                    <td>Google Workspace</td>
+                    <td class="text-right costo">$5.700</td>
+                </tr>
+                <tr>
+                    <td>Respaldos externos</td>
+                    <td>Backups adicionales</td>
+                    <td class="text-right costo">$10.000</td>
+                </tr>
+                <tr>
+                    <td>Sueldo desarrollador</td>
+                    <td>Yo (tiempo completo)</td>
+                    <td class="text-right costo">$800.000</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="2">COSTO TOTAL A ESCALA</td>
+                    <td class="text-right">$929.700/mes</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">📊</span> Análisis de Márgenes por Cantidad de Clientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th class="text-center">Clientes</th>
+                    <th class="text-right">Ingresos</th>
+                    <th class="text-right">Costos</th>
+                    <th class="text-right">Margen</th>
+                    <th class="text-right">% Margen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">1 (piloto)</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">-</td>
+                </tr>
+                <tr>
+                    <td class="text-center">2</td>
+                    <td class="text-right">$1.000.000</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right margen-positivo">$1.000.000</td>
+                    <td class="text-right margen-positivo">100%</td>
+                </tr>
+                <tr>
+                    <td class="text-center">3</td>
+                    <td class="text-right">$1.500.000</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right margen-positivo">$1.500.000</td>
+                    <td class="text-right margen-positivo">100%</td>
+                </tr>
+                <tr style="background: #fef3c7;">
+                    <td class="text-center"><strong>4 (invertir)</strong></td>
+                    <td class="text-right">$2.000.000</td>
+                    <td class="text-right">$69.700</td>
+                    <td class="text-right margen-positivo">$1.930.300</td>
+                    <td class="text-right margen-positivo">97%</td>
+                </tr>
+                <tr>
+                    <td class="text-center">5</td>
+                    <td class="text-right">$2.500.000</td>
+                    <td class="text-right">$69.700</td>
+                    <td class="text-right margen-positivo">$2.430.300</td>
+                    <td class="text-right margen-positivo">97%</td>
+                </tr>
+                <tr>
+                    <td class="text-center">10</td>
+                    <td class="text-right">$5.000.000</td>
+                    <td class="text-right">$150.000</td>
+                    <td class="text-right margen-positivo">$4.850.000</td>
+                    <td class="text-right margen-positivo">97%</td>
+                </tr>
+                <tr style="background: #f0fdf4;">
+                    <td class="text-center"><strong>10 (con sueldo)</strong></td>
+                    <td class="text-right">$5.000.000</td>
+                    <td class="text-right">$929.700</td>
+                    <td class="text-right margen-positivo">$4.070.300</td>
+                    <td class="text-right margen-positivo">81%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">🎯</span> Puntos de Decisión</h2>
+
+        <div class="decision-box">
+            <h3>¿Cuándo invertir en infraestructura?</h3>
+            <ul>
+                <li><strong>Hasta 3 clientes:</strong> Plan gratuito es suficiente. No gastar.</li>
+                <li><strong>Cliente 4:</strong> Evaluar si el free tier aguanta. Probablemente sí.</li>
+                <li><strong>Cliente 5+:</strong> Pasar a planes pagados (~$70.000/mes)</li>
+                <li><strong>Cliente 10+:</strong> Considerar sueldo fijo para ti</li>
+            </ul>
+        </div>
+
+        <div class="formula">
+            <div style="color: #666; font-size: 12px; margin-bottom: 10px;">REGLA DE ORO</div>
+            <div class="equation">
+                Costos de infra &lt; 10% de ingresos
+            </div>
+            <div style="color: #666; font-size: 13px; margin-top: 10px;">
+                Con 5 clientes ($2.5M) → máximo $250.000 en costos de infra
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">⚠️</span> Límites de los Planes Gratuitos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Límite Free</th>
+                    <th>Señal de alerta</th>
+                    <th>Plan siguiente</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Supabase DB</td>
+                    <td>500 MB storage</td>
+                    <td>Llegando a 400 MB</td>
+                    <td>Pro $25 USD (8GB)</td>
+                </tr>
+                <tr>
+                    <td>Supabase Transfer</td>
+                    <td>2 GB/mes</td>
+                    <td>Muchas consultas pesadas</td>
+                    <td>Pro $25 USD (50GB)</td>
+                </tr>
+                <tr>
+                    <td>Vercel</td>
+                    <td>100 GB bandwidth</td>
+                    <td>Mucho tráfico</td>
+                    <td>Pro $20 USD</td>
+                </tr>
+                <tr>
+                    <td>Vercel Builds</td>
+                    <td>6000 min/mes</td>
+                    <td>Deploys frecuentes</td>
+                    <td>Pro $20 USD</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="nota">
+            <strong>Tip:</strong> Monitorea el dashboard de Supabase y Vercel mensualmente.
+            Te avisan cuando estás llegando al límite.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">💵</span> Flujo de Caja - Primer Año Proyectado</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mes</th>
+                    <th class="text-center">Clientes</th>
+                    <th class="text-right">Instalaciones</th>
+                    <th class="text-right">Mantenciones</th>
+                    <th class="text-right">Costos</th>
+                    <th class="text-right">Neto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mes 1-2</td>
+                    <td class="text-center">1 (piloto)</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                </tr>
+                <tr>
+                    <td>Mes 3</td>
+                    <td class="text-center">2</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right margen-positivo">$1.000.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 4</td>
+                    <td class="text-center">3</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$1.000.000</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right margen-positivo">$1.500.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 5</td>
+                    <td class="text-center">4</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$1.500.000</td>
+                    <td class="text-right">$70.000</td>
+                    <td class="text-right margen-positivo">$1.930.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 6</td>
+                    <td class="text-center">5</td>
+                    <td class="text-right">$500.000</td>
+                    <td class="text-right">$2.000.000</td>
+                    <td class="text-right">$70.000</td>
+                    <td class="text-right margen-positivo">$2.430.000</td>
+                </tr>
+                <tr style="background: #f0fdf4;">
+                    <td>Mes 12</td>
+                    <td class="text-center">10</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$5.000.000</td>
+                    <td class="text-right">$150.000</td>
+                    <td class="text-right margen-positivo">$4.850.000</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">📝</span> Resumen de Precios</h2>
+        <div class="resumen-grid">
+            <div class="resumen-card">
+                <div class="label">INSTALACIÓN</div>
+                <div class="valor">$500.000</div>
+                <div class="label">Pago único</div>
+            </div>
+            <div class="resumen-card">
+                <div class="label">MANTENCIÓN</div>
+                <div class="valor">$500.000</div>
+                <div class="label">Mensual</div>
+            </div>
+            <div class="resumen-card destacado">
+                <div class="label">INGRESO AÑO 1</div>
+                <div class="valor">$6M+</div>
+                <div class="label">Con 5 clientes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN LEGAL Y TRIBUTARIA                   -->
+    <!-- ============================================ -->
+
+    <div class="section" style="border-top: 4px solid #6366f1; margin-top: 40px;">
+        <h2><span class="icon">⚖️</span> Formalización Legal en Chile</h2>
+
+        <h3 style="margin-top: 20px; margin-bottom: 15px;">Tipo de Empresa Recomendado: SpA</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Característica</th>
+                    <th>SpA (Recomendado)</th>
+                    <th>EIRL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Socios</td>
+                    <td class="gratis">1 o más (flexible)</td>
+                    <td>Solo 1</td>
+                </tr>
+                <tr>
+                    <td>Giros comerciales</td>
+                    <td class="gratis">Múltiples</td>
+                    <td>Solo 1</td>
+                </tr>
+                <tr>
+                    <td>Agregar inversionistas</td>
+                    <td class="gratis">Fácil (acciones)</td>
+                    <td>No es posible</td>
+                </tr>
+                <tr>
+                    <td>Crecimiento</td>
+                    <td class="gratis">Ideal para startups</td>
+                    <td>Limitado</td>
+                </tr>
+                <tr>
+                    <td>Popularidad 2024</td>
+                    <td class="gratis">72.98%</td>
+                    <td>16.42%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="nota">
+            <strong>Recomendación:</strong> SpA es la estructura más versátil. Permite empezar solo y agregar socios o inversionistas después sin cambiar la estructura legal.
+        </div>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px;">Costo de Crear la Empresa</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Trámite</th>
+                    <th>Plataforma</th>
+                    <th class="text-right">Costo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Constitución SpA</td>
+                    <td>Tu Empresa en un Día (online)</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr>
+                    <td>Firma digital</td>
+                    <td>En línea</td>
+                    <td class="text-right">$990 - $1.000</td>
+                </tr>
+                <tr>
+                    <td>Firma ante notario</td>
+                    <td>Presencial (alternativa)</td>
+                    <td class="text-right">$10.000</td>
+                </tr>
+                <tr>
+                    <td>Inicio de actividades</td>
+                    <td>SII online</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="2">TOTAL MÍNIMO PARA OPERAR</td>
+                    <td class="text-right">$990 - $10.000</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">🧾</span> Obligaciones Tributarias</h2>
+
+        <h3 style="margin-top: 20px; margin-bottom: 15px;">Impuestos Principales</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Impuesto</th>
+                    <th>Tasa</th>
+                    <th>Aplicación</th>
+                    <th>Frecuencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>IVA</strong></td>
+                    <td class="costo">19%</td>
+                    <td>Sobre cada factura emitida</td>
+                    <td>Mensual (F29)</td>
+                </tr>
+                <tr>
+                    <td><strong>Impuesto 1ª Categoría</strong></td>
+                    <td class="costo">25% - 27%</td>
+                    <td>Sobre utilidades anuales</td>
+                    <td>Anual (Abril)</td>
+                </tr>
+                <tr>
+                    <td><strong>PPM</strong></td>
+                    <td class="costo">~1%</td>
+                    <td>Pago provisional mensual</td>
+                    <td>Mensual (F29)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="decision-box" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+            <h3>IVA en Servicios de Software (Ley 21.420)</h3>
+            <p style="margin-bottom: 15px;">Desde 2023, los servicios de software están <strong>AFECTOS a IVA (19%)</strong>.</p>
+            <ul>
+                <li><strong>Debes cobrar IVA</strong> en cada factura a tus clientes</li>
+                <li>Factura de $500.000 + IVA = <strong>$595.000 total</strong></li>
+                <li>Los $95.000 de IVA los pagas al SII mensualmente</li>
+                <li>Puedes descontar el IVA de tus compras (crédito fiscal)</li>
+            </ul>
+        </div>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px;">Declaraciones Obligatorias</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Declaración</th>
+                    <th>Formulario</th>
+                    <th>Frecuencia</th>
+                    <th>Vencimiento</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>IVA + PPM</td>
+                    <td>F29</td>
+                    <td>Mensual</td>
+                    <td>Día 12 del mes siguiente</td>
+                </tr>
+                <tr>
+                    <td>Renta anual</td>
+                    <td>F22</td>
+                    <td>Anual</td>
+                    <td>Abril</td>
+                </tr>
+                <tr>
+                    <td>DJ Honorarios</td>
+                    <td>F1879</td>
+                    <td>Anual</td>
+                    <td>Marzo</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">🏛️</span> Patente Municipal</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>¿Es obligatoria?</td>
+                    <td><strong>Sí</strong>, para toda actividad comercial</td>
+                </tr>
+                <tr>
+                    <td>Cálculo</td>
+                    <td>Entre 2,5‰ y 5‰ del capital propio</td>
+                </tr>
+                <tr>
+                    <td>Mínimo</td>
+                    <td>1 UTM (~$67.000)</td>
+                </tr>
+                <tr>
+                    <td>Pago</td>
+                    <td>Semestral (Julio y Enero)</td>
+                </tr>
+                <tr>
+                    <td>Dirección</td>
+                    <td>Puedes usar tu domicilio como oficina</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="nota">
+            <strong>Nota:</strong> Cada municipalidad tiene tasas diferentes. Consulta en tu municipio específico. Para servicios digitales desde casa, el costo suele ser el mínimo (1 UTM semestral).
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">👨‍💼</span> Contador - ¿Necesito uno?</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Escenario</th>
+                    <th>¿Contador?</th>
+                    <th class="text-right">Costo Mensual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-3 clientes, pocas facturas</td>
+                    <td>Opcional (hazlo tú con SII)</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr>
+                    <td>3-5 clientes</td>
+                    <td>Recomendado (online básico)</td>
+                    <td class="text-right">$30.000 - $50.000</td>
+                </tr>
+                <tr>
+                    <td>5-10 clientes</td>
+                    <td>Necesario</td>
+                    <td class="text-right">$50.000 - $80.000</td>
+                </tr>
+                <tr>
+                    <td>10+ clientes / empleados</td>
+                    <td>Imprescindible</td>
+                    <td class="text-right">$80.000 - $150.000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px;">¿Qué hace el contador?</h3>
+        <ul style="margin-left: 20px; line-height: 2;">
+            <li>Declaración mensual F29 (IVA)</li>
+            <li>Declaración anual de renta</li>
+            <li>Libros contables</li>
+            <li>Asesoría tributaria</li>
+            <li>Liquidaciones de sueldo (si tienes empleados)</li>
+        </ul>
+
+        <div class="nota">
+            <strong>Estrategia:</strong> Hasta el cliente 3, puedes hacer el F29 tú mismo en el SII (es simple si solo emites facturas). Desde el cliente 4+, contrata un contador online básico (~$40.000/mes).
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">📋</span> Checklist de Formalización</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="text-center">Paso</th>
+                    <th>Trámite</th>
+                    <th>Dónde</th>
+                    <th class="text-right">Costo</th>
+                    <th class="text-center">¿Cuándo?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">1</td>
+                    <td>Crear SpA</td>
+                    <td>tuempresaenundia.cl</td>
+                    <td class="text-right">$990</td>
+                    <td class="text-center">Antes de facturar</td>
+                </tr>
+                <tr>
+                    <td class="text-center">2</td>
+                    <td>Inicio de actividades</td>
+                    <td>sii.cl</td>
+                    <td class="text-right gratis">$0</td>
+                    <td class="text-center">Mismo día</td>
+                </tr>
+                <tr>
+                    <td class="text-center">3</td>
+                    <td>Habilitar factura electrónica</td>
+                    <td>sii.cl</td>
+                    <td class="text-right gratis">$0</td>
+                    <td class="text-center">Mismo día</td>
+                </tr>
+                <tr>
+                    <td class="text-center">4</td>
+                    <td>Patente municipal</td>
+                    <td>Municipalidad</td>
+                    <td class="text-right">~$67.000/sem</td>
+                    <td class="text-center">Primer mes</td>
+                </tr>
+                <tr>
+                    <td class="text-center">5</td>
+                    <td>Primer F29</td>
+                    <td>sii.cl</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-center">Día 12 mes sig.</td>
+                </tr>
+                <tr>
+                    <td class="text-center">6</td>
+                    <td>Contratar contador</td>
+                    <td>Freelance/Online</td>
+                    <td class="text-right">$40.000/mes</td>
+                    <td class="text-center">Cliente 4+</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">💵</span> Resumen: Costos Legales y Tributarios</h2>
+
+        <h3 style="margin-bottom: 15px;">Costos Únicos (Formalización)</h3>
+        <table>
+            <tbody>
+                <tr>
+                    <td>Crear SpA online</td>
+                    <td class="text-right">$990 - $10.000</td>
+                </tr>
+                <tr>
+                    <td>Inicio actividades</td>
+                    <td class="text-right gratis">$0</td>
+                </tr>
+                <tr class="total-row">
+                    <td>TOTAL INICIAL</td>
+                    <td class="text-right">~$10.000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px;">Costos Recurrentes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th class="text-right">Mensual</th>
+                    <th class="text-right">Anual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Patente municipal (mínimo)</td>
+                    <td class="text-right">~$11.000</td>
+                    <td class="text-right">~$134.000</td>
+                </tr>
+                <tr>
+                    <td>Contador (desde cliente 4)</td>
+                    <td class="text-right">$40.000</td>
+                    <td class="text-right">$480.000</td>
+                </tr>
+                <tr>
+                    <td>IVA (19% de ingresos)</td>
+                    <td class="text-right" colspan="2">Variable - se traspasa al cliente</td>
+                </tr>
+                <tr class="total-row">
+                    <td>TOTAL FIJO MENSUAL</td>
+                    <td class="text-right">~$51.000</td>
+                    <td class="text-right">~$614.000</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">📊</span> Tabla Actualizada: Costos Totales por Fase</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fase</th>
+                    <th class="text-center">Clientes</th>
+                    <th class="text-right">Infra</th>
+                    <th class="text-right">Legal/Contador</th>
+                    <th class="text-right">Total Costos</th>
+                    <th class="text-right">Ingresos</th>
+                    <th class="text-right">Margen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Piloto</td>
+                    <td class="text-center">1</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$11.000</td>
+                    <td class="text-right">$11.000</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right costo">-$11.000</td>
+                </tr>
+                <tr>
+                    <td>Validación</td>
+                    <td class="text-center">2-3</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$11.000</td>
+                    <td class="text-right">$11.000</td>
+                    <td class="text-right">$1.000.000</td>
+                    <td class="text-right margen-positivo">$989.000</td>
+                </tr>
+                <tr style="background: #fef3c7;">
+                    <td><strong>Formalizar</strong></td>
+                    <td class="text-center">4-5</td>
+                    <td class="text-right">$70.000</td>
+                    <td class="text-right">$51.000</td>
+                    <td class="text-right">$121.000</td>
+                    <td class="text-right">$2.000.000</td>
+                    <td class="text-right margen-positivo">$1.879.000</td>
+                </tr>
+                <tr>
+                    <td>Crecimiento</td>
+                    <td class="text-center">6-10</td>
+                    <td class="text-right">$100.000</td>
+                    <td class="text-right">$91.000</td>
+                    <td class="text-right">$191.000</td>
+                    <td class="text-right">$4.000.000</td>
+                    <td class="text-right margen-positivo">$3.809.000</td>
+                </tr>
+                <tr style="background: #f0fdf4;">
+                    <td><strong>Escala</strong></td>
+                    <td class="text-center">10+</td>
+                    <td class="text-right">$150.000</td>
+                    <td class="text-right">$161.000</td>
+                    <td class="text-right">$311.000</td>
+                    <td class="text-right">$5.000.000</td>
+                    <td class="text-right margen-positivo">$4.689.000</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">* No incluye sueldo propio. Con sueldo de $800.000, restar eso del margen.</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">💼</span> Tu Sueldo como Dueño</h2>
+
+        <h3 style="margin-top: 20px; margin-bottom: 15px;">Opciones para pagarte</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Opción</th>
+                    <th>Cómo funciona</th>
+                    <th>Impuestos</th>
+                    <th>Cotizaciones</th>
+                    <th class="text-center">Recomendado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background: #f0fdf4;">
+                    <td><strong>Sueldo empresarial</strong></td>
+                    <td>Te pagas como empleado</td>
+                    <td>Imp. Único 2ª Cat.</td>
+                    <td>AFP + Salud (~20%)</td>
+                    <td class="text-center gratis">✓ Sí</td>
+                </tr>
+                <tr>
+                    <td>Retiro utilidades</td>
+                    <td>Sacas de las ganancias</td>
+                    <td>Global Complementario</td>
+                    <td>No tiene</td>
+                    <td class="text-center">Complemento</td>
+                </tr>
+                <tr>
+                    <td>Honorarios</td>
+                    <td>Boleta a ti mismo</td>
+                    <td>Retención 15.25%</td>
+                    <td>Obligatorias</td>
+                    <td class="text-center costo">✗ No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="decision-box">
+            <h3>¿Por qué sueldo empresarial?</h3>
+            <ul>
+                <li><strong>Es gasto para la empresa</strong> → reduce utilidades → menos impuesto a la renta</li>
+                <li><strong>Acumulas AFP y salud</strong> → pensión, FONASA/Isapre, licencias médicas</li>
+                <li><strong>Demuestras ingresos formales</strong> → créditos, arriendo, hipotecario</li>
+                <li><strong>El SII lo acepta</strong> → si trabajas efectivamente en la empresa</li>
+            </ul>
+        </div>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px;">Sueldo recomendado por fase</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fase</th>
+                    <th class="text-center">Clientes</th>
+                    <th class="text-right">Sueldo Bruto</th>
+                    <th class="text-right">Descuentos (~20%)</th>
+                    <th class="text-right">Líquido</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Piloto</td>
+                    <td class="text-center">1</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right">$0</td>
+                </tr>
+                <tr>
+                    <td>Primeros pagos</td>
+                    <td class="text-center">2-3</td>
+                    <td class="text-right">$539.000 (mínimo)</td>
+                    <td class="text-right">$108.000</td>
+                    <td class="text-right">$431.000</td>
+                </tr>
+                <tr style="background: #fef3c7;">
+                    <td><strong>Estable</strong></td>
+                    <td class="text-center">4-6</td>
+                    <td class="text-right">$800.000</td>
+                    <td class="text-right">$160.000</td>
+                    <td class="text-right">$640.000</td>
+                </tr>
+                <tr>
+                    <td>Crecimiento</td>
+                    <td class="text-center">7-10</td>
+                    <td class="text-right">$1.200.000</td>
+                    <td class="text-right">$240.000</td>
+                    <td class="text-right">$960.000</td>
+                </tr>
+                <tr style="background: #f0fdf4;">
+                    <td><strong>Consolidado</strong></td>
+                    <td class="text-center">10+</td>
+                    <td class="text-right">$1.500.000</td>
+                    <td class="text-right">$300.000</td>
+                    <td class="text-right">$1.200.000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 25px; margin-bottom: 15px;">Descuentos legales del sueldo</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th class="text-right">Porcentaje</th>
+                    <th>Destino</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>AFP (obligatorio)</td>
+                    <td class="text-right">10% + comisión (~12%)</td>
+                    <td>Tu cuenta de pensión</td>
+                </tr>
+                <tr>
+                    <td>Salud</td>
+                    <td class="text-right">7%</td>
+                    <td>FONASA o Isapre</td>
+                </tr>
+                <tr>
+                    <td>Seguro cesantía</td>
+                    <td class="text-right">0.6%</td>
+                    <td>AFC</td>
+                </tr>
+                <tr class="total-row">
+                    <td>TOTAL DESCUENTOS</td>
+                    <td class="text-right">~20%</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="nota">
+            <strong>Sueldo mínimo 2026:</strong> $539.000. Es el piso para formalizar cotizaciones.
+            Con menos de 3 clientes, puedes no pagarte sueldo y hacer retiros informales para vivir.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">🧮</span> Simulación: Tu Ingreso Real con 5 Clientes</h2>
+
+        <div class="resumen-grid" style="grid-template-columns: 1fr 1fr;">
+            <div>
+                <h3 style="margin-bottom: 15px;">Ingresos de la empresa</h3>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>Mantención (5 x $500.000)</td>
+                            <td class="text-right gratis">+$2.500.000</td>
+                        </tr>
+                        <tr style="border-top: 2px solid #e5e5e5;">
+                            <td><strong>Total ingresos</strong></td>
+                            <td class="text-right"><strong>$2.500.000</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h3 style="margin-bottom: 15px;">Gastos de la empresa</h3>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>Infraestructura</td>
+                            <td class="text-right costo">-$70.000</td>
+                        </tr>
+                        <tr>
+                            <td>Contador</td>
+                            <td class="text-right costo">-$40.000</td>
+                        </tr>
+                        <tr>
+                            <td>Patente municipal</td>
+                            <td class="text-right costo">-$11.000</td>
+                        </tr>
+                        <tr>
+                            <td>Tu sueldo bruto</td>
+                            <td class="text-right costo">-$800.000</td>
+                        </tr>
+                        <tr style="border-top: 2px solid #e5e5e5;">
+                            <td><strong>Total gastos</strong></td>
+                            <td class="text-right"><strong>-$921.000</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="roi-box" style="margin-top: 20px;">
+            <h3>Resultado mensual con 5 clientes</h3>
+            <div class="roi-grid">
+                <div class="roi-item">
+                    <div class="value">$640.000</div>
+                    <div class="label">Tu sueldo líquido</div>
+                </div>
+                <div class="roi-item">
+                    <div class="value">$1.579.000</div>
+                    <div class="label">Utilidad empresa</div>
+                </div>
+                <div class="roi-item">
+                    <div class="value">$2.219.000</div>
+                    <div class="label">Total disponible</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nota" style="margin-top: 20px;">
+            <strong>La utilidad de $1.579.000</strong> queda en la empresa. Puedes:
+            <ul style="margin: 10px 0 0 20px;">
+                <li>Reinvertir (mejorar el producto, marketing)</li>
+                <li>Dejar como reserva (colchón financiero)</li>
+                <li>Retirar a fin de año (paga Global Complementario)</li>
+                <li>Aumentar tu sueldo el próximo año</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">📈</span> Proyección de Sueldo Anual</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mes</th>
+                    <th class="text-center">Clientes</th>
+                    <th class="text-right">Sueldo Bruto</th>
+                    <th class="text-right">Líquido</th>
+                    <th class="text-right">Utilidad Empresa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mes 1-2</td>
+                    <td class="text-center">1 (piloto)</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                    <td class="text-right">$0</td>
+                </tr>
+                <tr>
+                    <td>Mes 3</td>
+                    <td class="text-center">2</td>
+                    <td class="text-right">$539.000</td>
+                    <td class="text-right">$431.000</td>
+                    <td class="text-right">$450.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 4</td>
+                    <td class="text-center">3</td>
+                    <td class="text-right">$539.000</td>
+                    <td class="text-right">$431.000</td>
+                    <td class="text-right">$950.000</td>
+                </tr>
+                <tr style="background: #fef3c7;">
+                    <td>Mes 5</td>
+                    <td class="text-center">4</td>
+                    <td class="text-right">$800.000</td>
+                    <td class="text-right">$640.000</td>
+                    <td class="text-right">$1.079.000</td>
+                </tr>
+                <tr style="background: #fef3c7;">
+                    <td>Mes 6</td>
+                    <td class="text-center">5</td>
+                    <td class="text-right">$800.000</td>
+                    <td class="text-right">$640.000</td>
+                    <td class="text-right">$1.579.000</td>
+                </tr>
+                <tr>
+                    <td>Mes 7-12</td>
+                    <td class="text-center">5-7</td>
+                    <td class="text-right">$1.000.000</td>
+                    <td class="text-right">$800.000</td>
+                    <td class="text-right">$1.500.000+</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="formula" style="margin-top: 20px; background: #f0fdf4; border-color: #22c55e;">
+            <div style="color: #666; font-size: 12px; margin-bottom: 10px;">META AÑO 1</div>
+            <div class="equation" style="color: #166534;">
+                5 clientes → $640.000 líquido/mes + utilidades
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="icon">🔗</span> Enlaces Útiles</h2>
+        <table>
+            <tbody>
+                <tr>
+                    <td>Crear empresa</td>
+                    <td><a href="https://www.registrodeempresasysociedades.cl" target="_blank">tuempresaenundia.cl</a></td>
+                </tr>
+                <tr>
+                    <td>Inicio actividades</td>
+                    <td><a href="https://www.sii.cl" target="_blank">sii.cl</a></td>
+                </tr>
+                <tr>
+                    <td>Facturación electrónica</td>
+                    <td><a href="https://www.sii.cl" target="_blank">sii.cl → Factura electrónica</a></td>
+                </tr>
+                <tr>
+                    <td>Calculadora patente</td>
+                    <td><a href="https://www.numera.cl/calculadora-patente/" target="_blank">numera.cl/calculadora-patente</a></td>
+                </tr>
+                <tr>
+                    <td>Valor UF/UTM</td>
+                    <td><a href="https://www.sii.cl/valores_y_fechas/index.htm" target="_blank">sii.cl/valores_y_fechas</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+        Documento interno - Actualizado: Marzo 2026<br>
+        No compartir con clientes
+    </div>
+</body>
+</html>

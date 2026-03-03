@@ -58,6 +58,31 @@ type TurnoImport = {
 
 type ModoImportacion = "ausencias" | "cuadraturas";
 
+// --- Tipos Anticipos (desde RESUMEN DE GASTOS) ---
+type AnticipoImport = {
+  fecha: string;
+  nombre: string;
+  monto: number;
+  personalId: string;
+  valida: boolean;
+};
+
+// --- Tipos para Resumen de Gastos por Categoría ---
+type GastoDetalle = {
+  fecha: string;
+  nombre: string;
+  monto: number;
+  motivo?: string;
+};
+
+type ResumenGastosImport = {
+  bencinaEnzo: GastoDetalle[];
+  perrosMuertos: GastoDetalle[];
+  turnosExtras: GastoDetalle[];
+  horasExtras: GastoDetalle[];
+  domingos: GastoDetalle[];
+};
+
 export default function ImportarPage() {
   const router = useRouter();
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
@@ -81,6 +106,18 @@ export default function ImportarPage() {
   // Cuadraturas
   const [turnosImport, setTurnosImport] = useState<TurnoImport[]>([]);
   const [duplicadosAdvertencia, setDuplicadosAdvertencia] = useState("");
+
+  // Anticipos (desde RESUMEN DE GASTOS)
+  const [anticiposImport, setAnticiposImport] = useState<AnticipoImport[]>([]);
+
+  // Resumen de gastos por categoría (para mostrar en preview)
+  const [resumenGastos, setResumenGastos] = useState<ResumenGastosImport>({
+    bencinaEnzo: [],
+    perrosMuertos: [],
+    turnosExtras: [],
+    horasExtras: [],
+    domingos: [],
+  });
 
   // Resultado
   const [importados, setImportados] = useState(0);
@@ -155,6 +192,255 @@ export default function ImportarPage() {
     return isNaN(n) ? 0 : n;
   };
 
+  // Convertir fecha (puede ser número Excel o Date) a YYYY-MM-DD
+  const excelDateToString = (val: any): string | null => {
+    if (!val) return null;
+    // Si es un objeto Date
+    if (val instanceof Date) {
+      return val.toISOString().split("T")[0];
+    }
+    // Si es número Excel
+    if (typeof val === "number" && val > 40000) {
+      const d = new Date((val - 25569) * 86400000);
+      return d.toISOString().split("T")[0];
+    }
+    return null;
+  };
+
+  // --- Leer RESUMEN DE GASTOS ---
+  type GastoResumen = {
+    bencinaEnzo: number;
+    turnoExtra: number;
+    horasExtras: number;
+    tercerDomingo: number;
+    cuartoDomingo: number;
+    perrosMuertos: number;
+  };
+
+  const leerResumenGastos = (wb: XLSX.WorkBook, anio: number, mes: number): Map<string, GastoResumen> => {
+    const mapa = new Map<string, GastoResumen>();
+
+    const sheetName = wb.SheetNames.find(n => n.toUpperCase().includes("RESUMEN"));
+    if (!sheetName) return mapa;
+
+    const ws = wb.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+    const getOrCreate = (key: string): GastoResumen => {
+      if (!mapa.has(key)) {
+        mapa.set(key, { bencinaEnzo: 0, turnoExtra: 0, horasExtras: 0, tercerDomingo: 0, cuartoDomingo: 0, perrosMuertos: 0 });
+      }
+      return mapa.get(key)!;
+    };
+
+    const normalizeName = (name: string): string => {
+      return String(name || "").trim().toUpperCase().replace(/\s+/g, " ");
+    };
+
+    // COMBUSTIBLE ENZO (R22-R27, datos empiezan en R22 = index 21)
+    for (let r = 21; r <= 27; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      // Saltar si la primera columna no es fecha válida (Date o número Excel)
+      const fecha = excelDateToString(row[0]);
+      if (!fecha) continue;
+      const nombre = normalizeName(row[1]);
+      const monto = num(row[2]);
+      if (nombre && monto !== 0) {
+        const key = `${fecha}_${nombre}`;
+        getOrCreate(key).bencinaEnzo += monto;
+      }
+    }
+
+    // TURNOS/HORAS EXTRAS/DOMINGOS (R36 en adelante, datos empiezan en R36 = index 35)
+    for (let r = 35; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      // Saltar si la primera columna no es fecha válida
+      const fecha = excelDateToString(row[0]);
+      if (!fecha) continue;
+      const nombre = normalizeName(row[1]);
+      const motivo = String(row[2] || "").toUpperCase().trim();
+      const monto = num(row[3]);
+
+      if (!nombre || monto === 0) continue;
+
+      const key = `${fecha}_${nombre}`;
+      const gasto = getOrCreate(key);
+
+      if (motivo.includes("3ER") && motivo.includes("4TO") || motivo.includes("3ER Y4TO") || motivo.includes("3ERY4TO")) {
+        // Dividir entre 3er y 4to domingo
+        gasto.tercerDomingo += Math.round(monto / 2);
+        gasto.cuartoDomingo += Math.round(monto / 2);
+      } else if (motivo.includes("3ER") || motivo.includes("TERCER")) {
+        gasto.tercerDomingo += monto;
+      } else if (motivo.includes("4TO") || motivo.includes("CUARTO")) {
+        gasto.cuartoDomingo += monto;
+      } else if (motivo.includes("TURNO")) {
+        gasto.turnoExtra += monto;
+      } else if (motivo.includes("HORA")) {
+        gasto.horasExtras += monto;
+      } else if (motivo.includes("PERRO") || motivo.includes("MUERTO")) {
+        gasto.perrosMuertos += monto;
+      }
+      // Otros motivos como "AUSENCIA", "CAUTION" se ignoran (no son gastos del turno)
+    }
+
+    // PERROS MUERTOS (R88-R94, sección separada)
+    for (let r = 87; r <= 95; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const fecha = excelDateToString(row[0]);
+      if (!fecha) continue;
+      const nombre = normalizeName(row[1]);
+      const monto = num(row[2]);
+      if (nombre && monto !== 0) {
+        const key = `${fecha}_${nombre}`;
+        getOrCreate(key).perrosMuertos += monto;
+      }
+    }
+
+    // VALE EASY PAY (R25-R31, columnas I-K = indices 8-10)
+    for (let r = 24; r <= 32; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const fecha = excelDateToString(row[8]); // Columna I
+      if (!fecha) continue;
+      const nombre = normalizeName(row[9]); // Columna J
+      const monto = num(row[10]); // Columna K
+      if (nombre && monto !== 0) {
+        const key = `${fecha}_${nombre}`;
+        // Vale Easy Pay se suma a "otros" o podríamos agregarlo como campo separado
+        // Por ahora lo ignoramos ya que no afecta la cuadratura del turno
+      }
+    }
+
+    return mapa;
+  };
+
+  // --- Leer DETALLES de gastos para preview ---
+  const leerDetallesGastos = (wb: XLSX.WorkBook): ResumenGastosImport => {
+    const resultado: ResumenGastosImport = {
+      bencinaEnzo: [],
+      perrosMuertos: [],
+      turnosExtras: [],
+      horasExtras: [],
+      domingos: [],
+    };
+
+    const sheetName = wb.SheetNames.find(n => n.toUpperCase().includes("RESUMEN"));
+    if (!sheetName) return resultado;
+
+    const ws = wb.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+    const normalizeName = (name: string): string => {
+      return String(name || "").trim().toUpperCase().replace(/\s+/g, " ");
+    };
+
+    // COMBUSTIBLE ENZO (R22-R27)
+    for (let r = 21; r <= 27; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const fecha = excelDateToString(row[0]);
+      if (!fecha) continue;
+      const nombre = normalizeName(row[1]);
+      const monto = num(row[2]);
+      if (nombre && monto !== 0) {
+        resultado.bencinaEnzo.push({ fecha, nombre, monto });
+      }
+    }
+
+    // TURNOS/HORAS EXTRAS/DOMINGOS (R36 en adelante)
+    for (let r = 35; r < Math.min(rows.length, 85); r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const fecha = excelDateToString(row[0]);
+      if (!fecha) continue;
+      const nombre = normalizeName(row[1]);
+      const motivo = String(row[2] || "").toUpperCase().trim();
+      const monto = num(row[3]);
+
+      if (!nombre || monto === 0) continue;
+
+      if (motivo.includes("3ER") || motivo.includes("4TO") || motivo.includes("DOMINGO")) {
+        resultado.domingos.push({ fecha, nombre, monto, motivo });
+      } else if (motivo.includes("TURNO")) {
+        resultado.turnosExtras.push({ fecha, nombre, monto, motivo });
+      } else if (motivo.includes("HORA")) {
+        resultado.horasExtras.push({ fecha, nombre, monto, motivo });
+      }
+    }
+
+    // PERROS MUERTOS (R88-R94)
+    for (let r = 87; r <= 95; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const fecha = excelDateToString(row[0]);
+      if (!fecha) continue;
+      const nombre = normalizeName(row[1]);
+      const monto = num(row[2]);
+      if (nombre && monto !== 0) {
+        resultado.perrosMuertos.push({ fecha, nombre, monto });
+      }
+    }
+
+    return resultado;
+  };
+
+  // --- Leer ANTICIPOS desde RESUMEN DE GASTOS ---
+  const leerAnticipos = (wb: XLSX.WorkBook, anio: number, mes: number): AnticipoImport[] => {
+    const anticipos: AnticipoImport[] = [];
+
+    const sheetName = wb.SheetNames.find(n => n.toUpperCase().includes("RESUMEN"));
+    if (!sheetName) return anticipos;
+
+    const ws = wb.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+    const normalizeName = (name: string): string => {
+      return String(name || "").trim().toUpperCase().replace(/\s+/g, " ");
+    };
+
+    // Fecha por defecto: último día del mes (para anticipos sin fecha específica)
+    const mesStr = String(mes).padStart(2, "0");
+    const ultimoDia = new Date(anio, mes, 0).getDate();
+    const fechaDefault = `${anio}-${mesStr}-${String(ultimoDia).padStart(2, "0")}`;
+
+    // ANTICIPOS (columnas J-K, filas 40-55 aproximadamente)
+    // Columna I (8) = fecha (puede ser null), Columna J (9) = nombre, Columna K (10) = monto
+    for (let r = 39; r <= 55; r++) {
+      const row = rows[r];
+      if (!row) continue;
+
+      const nombre = normalizeName(row[9]); // Columna J
+      const monto = num(row[10]); // Columna K
+
+      // Solo si hay nombre y monto
+      if (!nombre || monto === 0) continue;
+
+      // Intentar obtener fecha de columna I, si no usar fecha default
+      let fecha = excelDateToString(row[8]);
+      if (!fecha) {
+        fecha = fechaDefault;
+      }
+
+      // Buscar match con personal
+      const match = buscarPersonal(nombre);
+
+      anticipos.push({
+        fecha,
+        nombre,
+        monto,
+        personalId: match?.id || "",
+        valida: !!match,
+      });
+    }
+
+    console.log("ANTICIPOS encontrados:", anticipos.length);
+    return anticipos;
+  };
+
   // --- Upload ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -170,6 +456,8 @@ export default function ImportarPage() {
       setHojasDisponibles(wb.SheetNames);
       setFilasAusencias([]);
       setTurnosImport([]);
+      setAnticiposImport([]);
+      setResumenGastos({ bencinaEnzo: [], perrosMuertos: [], turnosExtras: [], horasExtras: [], domingos: [] });
       setImportados(0);
       setModo("");
       setDuplicadosAdvertencia("");
@@ -266,6 +554,18 @@ export default function ImportarPage() {
       { label: "C", nombre: "noche", colStart: 17 },   // R=col17 to V=col21
     ];
 
+    // Leer gastos del RESUMEN DE GASTOS
+    const gastosResumen = leerResumenGastos(workbook, anioExcel, mesExcel);
+    console.log("RESUMEN GASTOS:", gastosResumen.size, "entradas");
+
+    // Leer anticipos del RESUMEN DE GASTOS
+    const anticiposLeidos = leerAnticipos(workbook, anioExcel, mesExcel);
+    setAnticiposImport(anticiposLeidos);
+
+    // Leer detalles de gastos para preview
+    const detallesGastos = leerDetallesGastos(workbook);
+    setResumenGastos(detallesGastos);
+
     const result: TurnoImport[] = [];
     const mesStr = String(mesExcel).padStart(2, "0");
 
@@ -354,66 +654,40 @@ export default function ImportarPage() {
             }
           }
 
-          // Gastos
+          // Gastos - inicializar con valores del RESUMEN DE GASTOS
+          const nombreNormalizado = nameStr.toUpperCase().replace(/\s+/g, " ");
+          const keyResumen = `${fechaDefault}_${nombreNormalizado}`;
+          const gastosDelResumen = gastosResumen.get(keyResumen);
+
           const gastosObj = {
-            bencinaEnzo: 0,
-            perrosMuertos: 0,
-            turnoExtra: 0,
-            horasExtras: 0,
+            bencinaEnzo: gastosDelResumen?.bencinaEnzo || 0,
+            perrosMuertos: gastosDelResumen?.perrosMuertos || 0,
+            turnoExtra: gastosDelResumen?.turnoExtra || 0,
+            horasExtras: gastosDelResumen?.horasExtras || 0,
             comisionesPromocion: 0,
             comisionesLubricantes: 0,
-            tercerDomingo: 0,
-            cuartoDomingo: 0,
+            tercerDomingo: gastosDelResumen?.tercerDomingo || 0,
+            cuartoDomingo: gastosDelResumen?.cuartoDomingo || 0,
             quintoDomingo: 0,
             valeEasyPay: 0,
             otros: 0,
           };
 
-          // R41 = row 40: Comision A Y L
+          // Marcar hasData si hay gastos del resumen
+          if (gastosDelResumen) {
+            const totalGastosResumen = Object.values(gastosDelResumen).reduce((a, b) => a + b, 0);
+            if (totalGastosResumen > 0) hasData = true;
+          }
+
+          // R41 = row 40: Comision A Y L (esta fila sí es confiable)
           const comisionVal = num(rows[40]?.[col]);
           if (comisionVal !== 0) {
             gastosObj.comisionesPromocion = comisionVal;
             hasData = true;
           }
 
-          // R42-43 = rows 41-42: Variable expenses (parse label from column A or turno's first col)
-          for (let r = 41; r <= 42; r++) {
-            const val = num(rows[r]?.[col]);
-            if (val === 0) continue;
-            hasData = true;
-
-            // Try to read the label from column A (col 0) or the turno's label column
-            const labelRaw = String(rows[r]?.[0] || rows[r]?.[colStart - 1] || "").toUpperCase().trim();
-
-            if (labelRaw.includes("TERCER") || (labelRaw.includes("DOMINGO") && labelRaw.includes("3"))) {
-              gastosObj.tercerDomingo += val;
-            } else if (labelRaw.includes("4") || labelRaw.includes("CUARTO")) {
-              gastosObj.cuartoDomingo += val;
-            } else if (labelRaw.includes("5TO") || labelRaw.includes("QUINTO")) {
-              gastosObj.quintoDomingo += val;
-            } else if (labelRaw.includes("TURNO") || labelRaw.includes("T EXTRA") || labelRaw.includes("TEXTRA")) {
-              gastosObj.turnoExtra += val;
-            } else if (labelRaw.includes("BENCINA") || labelRaw.includes("DIESEL")) {
-              gastosObj.bencinaEnzo += val;
-            } else if (labelRaw.includes("DOMINGO")) {
-              // Generic domingo without qualifier → tercerDomingo
-              gastosObj.tercerDomingo += val;
-            } else {
-              gastosObj.otros += val;
-            }
-          }
-
-          // R44 = row 43: Vale Easy Pay or other
-          const r44Val = num(rows[43]?.[col]);
-          if (r44Val !== 0) {
-            hasData = true;
-            const labelR44 = String(rows[43]?.[0] || rows[43]?.[colStart - 1] || "").toUpperCase().trim();
-            if (labelR44.includes("EASY PAY") || labelR44.includes("EASYPAY")) {
-              gastosObj.valeEasyPay += r44Val;
-            } else {
-              gastosObj.otros += r44Val;
-            }
-          }
+          // R42-R44: Gastos variables - IGNORADOS porque no son confiables
+          // Los gastos importantes (turnos extras, domingos, etc.) vienen del RESUMEN DE GASTOS
 
           // R50 = row 49: Tarjetas
           const tarjetas = num(rows[49]?.[col]);
@@ -656,9 +930,38 @@ export default function ImportarPage() {
       inserted += batch.length;
     }
 
-    toast.success("Importación completada", `Se importaron ${inserted} turnos`);
-    setImportados(inserted);
+    // Importar anticipos a pagos_personal
+    const anticiposValidos = anticiposImport.filter((a) => a.valida && a.personalId);
+    let anticiposInserted = 0;
+
+    if (anticiposValidos.length > 0) {
+      const anticiposRegistros = anticiposValidos.map((a) => {
+        const empleado = empleados.find(e => e.id === a.personalId);
+        return {
+          fecha: a.fecha,
+          tipo: "anticipo",
+          monto: a.monto,
+          personal_id: a.personalId,
+          nombre_personal: empleado?.nombre || a.nombre,
+          comentario: "Importado desde Excel",
+        };
+      });
+
+      const { error: errorAnticipos } = await supabase.from("pagos_personal").insert(anticiposRegistros);
+      if (errorAnticipos) {
+        toast.warning("Error al importar anticipos", errorAnticipos.message);
+      } else {
+        anticiposInserted = anticiposValidos.length;
+      }
+    }
+
+    const mensaje = anticiposInserted > 0
+      ? `Se importaron ${inserted} turnos y ${anticiposInserted} anticipos`
+      : `Se importaron ${inserted} turnos`;
+    toast.success("Importación completada", mensaje);
+    setImportados(inserted + anticiposInserted);
     setTurnosImport([]);
+    setAnticiposImport([]);
     setImportando(false);
   };
 
@@ -711,11 +1014,14 @@ export default function ImportarPage() {
     setModo("");
     setFilasAusencias([]);
     setTurnosImport([]);
+    setAnticiposImport([]);
+    setResumenGastos({ bencinaEnzo: [], perrosMuertos: [], turnosExtras: [], horasExtras: [], domingos: [] });
     setDuplicadosAdvertencia("");
   };
 
   // --- Resumen cuadraturas ---
   const diasUnicos = new Set(turnosImport.map((t) => t.fecha)).size;
+  const anticiposValidos = anticiposImport.filter((a) => a.valida).length;
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto">
@@ -898,6 +1204,8 @@ export default function ImportarPage() {
               >
                 {importando
                   ? "Importando..."
+                  : anticiposValidos > 0
+                  ? `Importar ${turnosValidos} turnos + ${anticiposValidos} anticipos`
                   : `Importar ${turnosValidos} registros`}
               </button>
             </div>
@@ -1031,6 +1339,263 @@ export default function ImportarPage() {
 
           <div className="px-6 py-3 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500">
             Las filas en rojo no tienen responsable asignado. Selecciona manualmente el nombre correcto.
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* VISTA PREVIA: GASTOS DESDE RESUMEN           */}
+      {/* ============================================ */}
+      {modo === "cuadraturas" && (resumenGastos.bencinaEnzo.length > 0 || resumenGastos.perrosMuertos.length > 0 || resumenGastos.turnosExtras.length > 0 || resumenGastos.horasExtras.length > 0 || resumenGastos.domingos.length > 0) && (
+        <div className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm mb-6 overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+              Gastos encontrados en RESUMEN DE GASTOS
+            </h2>
+            <p className="text-xs text-zinc-500">
+              Estos gastos se asignarán automáticamente a los turnos correspondientes
+            </p>
+          </div>
+
+          {/* Grid de categorías */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-6">
+
+            {/* Bencina Enzo */}
+            {resumenGastos.bencinaEnzo.length > 0 && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">⛽</span>
+                  <span className="text-sm font-bold text-blue-700 dark:text-blue-400">Bencina Enzo</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-800 dark:text-blue-300 mb-2">
+                  {money(resumenGastos.bencinaEnzo.reduce((a, g) => a + g.monto, 0))}
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">{resumenGastos.bencinaEnzo.length} registros</p>
+                <details className="mt-3">
+                  <summary className="text-xs text-blue-500 cursor-pointer hover:underline">Ver detalle</summary>
+                  <ul className="mt-2 space-y-1 text-xs max-h-32 overflow-y-auto">
+                    {resumenGastos.bencinaEnzo.map((g, i) => (
+                      <li key={i} className="flex justify-between text-blue-700 dark:text-blue-300">
+                        <span>{g.fecha.slice(5)} - {g.nombre}</span>
+                        <span className="font-bold">{money(g.monto)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            )}
+
+            {/* Perros Muertos */}
+            {resumenGastos.perrosMuertos.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">🏃‍♂️</span>
+                  <span className="text-sm font-bold text-red-700 dark:text-red-400">Perros Muertos</span>
+                </div>
+                <p className="text-2xl font-bold text-red-800 dark:text-red-300 mb-2">
+                  {money(resumenGastos.perrosMuertos.reduce((a, g) => a + g.monto, 0))}
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-400">{resumenGastos.perrosMuertos.length} registros</p>
+                <details className="mt-3">
+                  <summary className="text-xs text-red-500 cursor-pointer hover:underline">Ver detalle</summary>
+                  <ul className="mt-2 space-y-1 text-xs max-h-32 overflow-y-auto">
+                    {resumenGastos.perrosMuertos.map((g, i) => (
+                      <li key={i} className="flex justify-between text-red-700 dark:text-red-300">
+                        <span>{g.fecha.slice(5)} - {g.nombre}</span>
+                        <span className="font-bold">{money(g.monto)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            )}
+
+            {/* Turnos Extras */}
+            {resumenGastos.turnosExtras.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">⏱️</span>
+                  <span className="text-sm font-bold text-amber-700 dark:text-amber-400">Turnos Extras</span>
+                </div>
+                <p className="text-2xl font-bold text-amber-800 dark:text-amber-300 mb-2">
+                  {money(resumenGastos.turnosExtras.reduce((a, g) => a + g.monto, 0))}
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">{resumenGastos.turnosExtras.length} registros</p>
+                <details className="mt-3">
+                  <summary className="text-xs text-amber-500 cursor-pointer hover:underline">Ver detalle</summary>
+                  <ul className="mt-2 space-y-1 text-xs max-h-32 overflow-y-auto">
+                    {resumenGastos.turnosExtras.map((g, i) => (
+                      <li key={i} className="flex justify-between text-amber-700 dark:text-amber-300">
+                        <span>{g.fecha.slice(5)} - {g.nombre}</span>
+                        <span className="font-bold">{money(g.monto)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            )}
+
+            {/* Horas Extras */}
+            {resumenGastos.horasExtras.length > 0 && (
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">🕐</span>
+                  <span className="text-sm font-bold text-orange-700 dark:text-orange-400">Horas Extras</span>
+                </div>
+                <p className="text-2xl font-bold text-orange-800 dark:text-orange-300 mb-2">
+                  {money(resumenGastos.horasExtras.reduce((a, g) => a + g.monto, 0))}
+                </p>
+                <p className="text-xs text-orange-600 dark:text-orange-400">{resumenGastos.horasExtras.length} registros</p>
+                <details className="mt-3">
+                  <summary className="text-xs text-orange-500 cursor-pointer hover:underline">Ver detalle</summary>
+                  <ul className="mt-2 space-y-1 text-xs max-h-32 overflow-y-auto">
+                    {resumenGastos.horasExtras.map((g, i) => (
+                      <li key={i} className="flex justify-between text-orange-700 dark:text-orange-300">
+                        <span>{g.fecha.slice(5)} - {g.nombre}</span>
+                        <span className="font-bold">{money(g.monto)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            )}
+
+            {/* Domingos (3er y 4to) */}
+            {resumenGastos.domingos.length > 0 && (
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">📅</span>
+                  <span className="text-sm font-bold text-purple-700 dark:text-purple-400">Domingos</span>
+                </div>
+                <p className="text-2xl font-bold text-purple-800 dark:text-purple-300 mb-2">
+                  {money(resumenGastos.domingos.reduce((a, g) => a + g.monto, 0))}
+                </p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">{resumenGastos.domingos.length} registros</p>
+                <details className="mt-3">
+                  <summary className="text-xs text-purple-500 cursor-pointer hover:underline">Ver detalle</summary>
+                  <ul className="mt-2 space-y-1 text-xs max-h-32 overflow-y-auto">
+                    {resumenGastos.domingos.map((g, i) => (
+                      <li key={i} className="flex justify-between text-purple-700 dark:text-purple-300">
+                        <span>{g.fecha.slice(5)} - {g.nombre}</span>
+                        <span className="font-bold">{money(g.monto)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            )}
+
+          </div>
+
+          <div className="px-6 py-3 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500">
+            Los gastos se asignan a cada turno según la fecha y el nombre del responsable.
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* VISTA PREVIA: ANTICIPOS                      */}
+      {/* ============================================ */}
+      {modo === "cuadraturas" && anticiposImport.length > 0 && (
+        <div className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm mb-6 overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+              Anticipos encontrados en RESUMEN DE GASTOS
+            </h2>
+            <p className="text-xs text-zinc-500">
+              {anticiposImport.filter(a => a.valida).length} de {anticiposImport.length} anticipos listos para importar
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-zinc-50 dark:bg-zinc-900 text-zinc-500 uppercase text-xs">
+                <tr>
+                  <th className="px-4 py-2">Fecha</th>
+                  <th className="px-4 py-2">Nombre (Excel)</th>
+                  <th className="px-4 py-2">Trabajador</th>
+                  <th className="px-4 py-2 text-right">Monto</th>
+                  <th className="px-4 py-2 text-center">OK</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {anticiposImport.map((a, i) => (
+                  <tr
+                    key={i}
+                    className={
+                      a.valida
+                        ? "bg-green-50/50 dark:bg-green-900/10"
+                        : "bg-red-50/50 dark:bg-red-900/10"
+                    }
+                  >
+                    <td className="px-4 py-2 text-xs font-mono">{a.fecha}</td>
+                    <td className="px-4 py-2 text-xs font-medium">{a.nombre}</td>
+                    <td className="px-4 py-2">
+                      {a.valida ? (
+                        <span className="text-xs font-medium text-green-700">
+                          {empleados.find(e => e.id === a.personalId)?.nombre || a.nombre}
+                        </span>
+                      ) : (
+                        <div className="flex gap-1 items-center">
+                          <select
+                            value={a.personalId}
+                            onChange={(e) => {
+                              setAnticiposImport((prev) => {
+                                const copy = [...prev];
+                                copy[i] = { ...copy[i], personalId: e.target.value, valida: !!e.target.value };
+                                return copy;
+                              });
+                            }}
+                            className="flex-1 p-1 rounded border text-xs border-red-300 bg-red-50"
+                          >
+                            <option value="">-- Sin asignar --</option>
+                            {empleados.map((e) => (
+                              <option key={e.id} value={e.id}>
+                                {e.nombre}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const persona = await agregarPersonalDespedido(a.nombre);
+                              if (!persona) return;
+                              setAnticiposImport((prev) => {
+                                const copy = [...prev];
+                                for (let j = 0; j < copy.length; j++) {
+                                  if (copy[j].nombre.trim().toUpperCase() === a.nombre.trim().toUpperCase() && !copy[j].valida) {
+                                    copy[j] = { ...copy[j], personalId: persona.id, valida: true };
+                                  }
+                                }
+                                return copy;
+                              });
+                            }}
+                            title={`Agregar "${a.nombre}" como despedido`}
+                            className="shrink-0 px-1.5 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-bold hover:bg-amber-200 transition"
+                          >
+                            +Nuevo
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right text-xs font-bold text-blue-600">
+                      {money(a.monto)}
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      {a.valida ? (
+                        <span className="text-green-600 font-bold">ok</span>
+                      ) : (
+                        <span className="text-red-500 font-bold">--</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border-t border-zinc-200 dark:border-zinc-800 text-xs text-blue-700 dark:text-blue-400">
+            Los anticipos se importarán junto con los turnos a la tabla de pagos.
           </div>
         </div>
       )}
