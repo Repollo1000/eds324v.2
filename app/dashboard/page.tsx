@@ -9,6 +9,8 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { toast } from "@/lib/toast";
 import { Trash2 } from "lucide-react";
 import type * as XLSXType from "xlsx";
+import { calcularTotalDomingos } from "@/lib/domingos";
+import { useUsuario } from "@/lib/useUsuario";
 
 const MESES_NOMBRES = [
   "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -17,6 +19,7 @@ const MESES_NOMBRES = [
 
 export default function DashboardPage() {
   const [mes, setMes, isReady] = useMesFiltro();
+  const { usuario } = useUsuario();
   const [loading, setLoading] = useState(true);
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -37,6 +40,7 @@ export default function DashboardPage() {
     perrosMuertos: 0,
     turnosExtrasMonto: 0,
     horasExtrasMonto: 0,
+    domingosExtrasMonto: 0, 
     comisionesPromocion: 0,
     comisionesLubricantes: 0,
     totalAnticipos: 0,
@@ -55,10 +59,26 @@ export default function DashboardPage() {
       const month = parseInt(monthStr);
       const lastDay = new Date(year, month, 0).getDate();
 
-      // 1. CONSULTA DB
-      const promiseTurnos = supabase.from("turnos").select("*").gte("fecha", startDate).lte("fecha", endDate).order('fecha');
-      const promisePagos = supabase.from("pagos_personal").select("*").gte("fecha", startDate).lte("fecha", endDate).order('fecha');
-      const promiseAusencias = supabase.from("ausencias").select("*").gte("fecha", startDate).lte("fecha", endDate);
+      // 1. CONSULTA DB (Optimizado: solo campos necesarios)
+      const promiseTurnos = supabase
+        .from("turnos")
+        .select("fecha, total_ventas, diferencia, gastos")
+        .gte("fecha", startDate)
+        .lte("fecha", endDate)
+        .order('fecha');
+
+      const promisePagos = supabase
+        .from("pagos_personal")
+        .select("tipo, monto")
+        .gte("fecha", startDate)
+        .lte("fecha", endDate)
+        .order('fecha');
+
+      const promiseAusencias = supabase
+        .from("ausencias")
+        .select("id")
+        .gte("fecha", startDate)
+        .lte("fecha", endDate);
 
       const [resTurnos, resPagos, resAusencias] = await Promise.all([promiseTurnos, promisePagos, promiseAusencias]);
 
@@ -79,6 +99,7 @@ export default function DashboardPage() {
       let totalPerros = 0;
       let montoTurnosExtras = 0;
       let montoHorasExtras = 0;
+      let montoDomingosExtras = 0; // <- DECLARACIÓN CORREGIDA
       let comPromocion = 0;
       let comLubricantes = 0;
 
@@ -91,10 +112,8 @@ export default function DashboardPage() {
         totalDiferencia += Number(t.diferencia) || 0;
 
         // --- LÓGICA DE GRÁFICO CORREGIDA ---
-        // Aseguramos obtener solo el día (DD) de la fecha YYYY-MM-DD
-        // Usamos split para evitar problemas de zona horaria con new Date()
         const diaPart = t.fecha.split('T')[0].split('-')[2]; 
-        const diaNum = parseInt(diaPart).toString(); // Quita ceros a la izquierda (05 -> 5) para normalizar
+        const diaNum = parseInt(diaPart).toString(); 
         
         ventasPorDia[diaNum] = (ventasPorDia[diaNum] || 0) + ventaDia;
 
@@ -104,17 +123,19 @@ export default function DashboardPage() {
           totalPerros += Number(t.gastos.perrosMuertos) || 0;
           montoTurnosExtras += Number(t.gastos.turnoExtra) || 0;
           montoHorasExtras += Number(t.gastos.horasExtras) || 0;
+          // CORREGIDO: usar helper function para sumar los 3 domingos
+          montoDomingosExtras += calcularTotalDomingos(t.gastos);
           comPromocion += Number(t.gastos.comisionesPromocion) || 0;
           comLubricantes += Number(t.gastos.comisionesLubricantes) || 0;
         }
       });
 
-      // Rellenar array del gráfico con todos los días del mes (incluso los vacíos)
+      // Rellenar array del gráfico
       const datosGrafico = [];
       for (let i = 1; i <= lastDay; i++) {
         const diaKey = i.toString();
         datosGrafico.push({ 
-            dia: i.toString(), // "1", "2"... 
+            dia: i.toString(), 
             monto: ventasPorDia[diaKey] || 0 
         });
       }
@@ -135,6 +156,7 @@ export default function DashboardPage() {
         perrosMuertos: totalPerros,
         turnosExtrasMonto: montoTurnosExtras,
         horasExtrasMonto: montoHorasExtras,
+        domingosExtrasMonto: montoDomingosExtras, // <- AGREGADO AL ESTADO
         comisionesPromocion: comPromocion,
         comisionesLubricantes: comLubricantes,
         totalAnticipos: sumAnticipos,
@@ -162,6 +184,10 @@ export default function DashboardPage() {
         'Com. Lubricantes': t.gastos?.comisionesLubricantes || 0,
         'Turnos Extra ($)': t.gastos?.turnoExtra || 0,
         'Horas Extra ($)': t.gastos?.horasExtras || 0,
+        // CORREGIDO: 3 columnas separadas para domingos
+        '3er Domingo ($)': t.gastos?.tercerDomingo || 0,
+        '4to Domingo ($)': t.gastos?.cuartoDomingo || 0,
+        '5to Domingo ($)': t.gastos?.quintoDomingo || 0,
     }));
     const datosRRHH = rawPagos.map(p => ({
         Fecha: p.fecha,
@@ -214,6 +240,7 @@ export default function DashboardPage() {
           perrosMuertos: 0,
           turnosExtrasMonto: 0,
           horasExtrasMonto: 0,
+          domingosExtrasMonto: 0,
           comisionesPromocion: 0,
           comisionesLubricantes: 0,
           totalAnticipos: 0,
@@ -259,14 +286,16 @@ export default function DashboardPage() {
             <span>📊</span> Exportar Excel
           </button>
 
-          <button
-            onClick={() => setConfirmDeleteModal(true)}
-            className="flex items-center gap-2 border border-red-200 dark:border-red-900/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg text-sm font-medium transition"
-            title="Eliminar datos del periodo"
-          >
-            <Trash2 size={16} />
-            <span className="hidden sm:inline">Limpiar</span>
-          </button>
+          {usuario?.rol === 'administrador' && (
+            <button
+              onClick={() => setConfirmDeleteModal(true)}
+              className="flex items-center gap-2 border border-red-200 dark:border-red-900/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg text-sm font-medium transition"
+              title="Eliminar datos del periodo (Solo administradores)"
+            >
+              <Trash2 size={16} />
+              <span className="hidden sm:inline">Limpiar</span>
+            </button>
+          )}
 
           <MonthPicker value={mes} onChange={setMes} />
         </div>
@@ -293,7 +322,7 @@ export default function DashboardPage() {
              </div>
         </div>
 
-        {/* 2. GRÁFICO DE TENDENCIA (CORREGIDO) */}
+        {/* 2. GRÁFICO DE TENDENCIA */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-x-auto">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-6">Tendencia de Ventas Diaria</h3>
             <div className="h-48 flex items-end gap-2 min-w-[600px] pb-2">
@@ -374,7 +403,10 @@ export default function DashboardPage() {
                         <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600">⏱️</div>
                         <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Extras</p>
                     </div>
-                    <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{money(resumen.turnosExtrasMonto + resumen.horasExtrasMonto)}</p>
+                    {/* <- ACTUALIZADO SUMANDO LOS DOMINGOS */}
+                    <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                      {money(resumen.turnosExtrasMonto + resumen.horasExtrasMonto + resumen.domingosExtrasMonto)}
+                    </p>
                     <p className="text-[10px] text-amber-600 mt-1 font-medium text-right group-hover:underline">Ver detalle →</p>
                 </div>
             </Link>
@@ -408,8 +440,9 @@ export default function DashboardPage() {
             <div className="col-span-1 sm:col-span-2 bg-zinc-50 dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-center">
                 <p className="text-xs font-bold text-zinc-400 uppercase mb-2">Total Desembolso Personal</p>
                 <div className="flex items-baseline justify-between">
+                    {/* <- ACTUALIZADO SUMANDO LOS DOMINGOS AL TOTAL GLOBAL */}
                     <span className="text-3xl font-bold text-zinc-800 dark:text-zinc-200">
-                        {money(resumen.turnosExtrasMonto + resumen.horasExtrasMonto + resumen.totalAnticipos + resumen.totalAguinaldos)}
+                        {money(resumen.turnosExtrasMonto + resumen.horasExtrasMonto + resumen.domingosExtrasMonto + resumen.totalAnticipos + resumen.totalAguinaldos)}
                     </span>
                     <span className="text-xs text-zinc-500 text-right">
                         (Extras + Anticipos + Aguinaldos)

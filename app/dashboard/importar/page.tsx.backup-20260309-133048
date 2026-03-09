@@ -558,14 +558,15 @@ export default function ImportarPage() {
       { label: "C", nombre: "noche", colStart: 17 },   // R=col17 to V=col21
     ];
 
-    // FORMATO ESTANDARIZADO: Los gastos se leen directamente de cada hoja de día
-    // Ya no necesitamos leer desde "RESUMEN DE GASTOS"
+    // Leer gastos del RESUMEN DE GASTOS
+    const gastosResumen = leerResumenGastos(workbook, anioExcel, mesExcel);
+    console.log("RESUMEN GASTOS:", gastosResumen.size, "entradas");
 
-    // Leer anticipos del RESUMEN DE GASTOS (si existe la hoja)
+    // Leer anticipos del RESUMEN DE GASTOS
     const anticiposLeidos = leerAnticipos(workbook, anioExcel, mesExcel);
     setAnticiposImport(anticiposLeidos);
 
-    // Leer detalles de gastos para preview (opcional)
+    // Leer detalles de gastos para preview
     const detallesGastos = leerDetallesGastos(workbook);
     setResumenGastos(detallesGastos);
 
@@ -588,7 +589,6 @@ export default function ImportarPage() {
       for (const turnoConfig of turnoMap) {
         const { label, nombre: turnoNombre, colStart } = turnoConfig;
 
-        // FORMATO ESTANDARIZADO:
         // R7 = row index 6 → names row
         const namesRow = rows[6];
         if (!namesRow) continue;
@@ -604,23 +604,36 @@ export default function ImportarPage() {
           // Check if person has any data (not all zeros)
           let hasData = false;
 
-          // Collect depositos (R8-R27 = rows 7-26, incluye monedas/efectivo en R22)
+          // Collect depositos (R8-R21 = rows 7-20)
           const depositosList: ItemLista[] = [];
-          for (let r = 7; r <= 26; r++) {
+          for (let r = 7; r <= 20; r++) {
             const val = rows[r]?.[col];
             if (val !== null && val !== undefined && num(val) !== 0) {
               hasData = true;
               depositosList.push({
                 id: crypto.randomUUID(),
                 monto: num(val),
-                referencia: r === 21 ? "Monedas/Efectivo" : "", // R22 = row 21
+                referencia: "",
               });
             }
           }
 
-          // Collect vouchers - Copiloto (R34-35 = rows 33-34)
+          // MONEDAS/EFECTIVO (R22-R27 = rows 21-26, pueden ser varias filas)
+          for (let r = 21; r <= 26; r++) {
+            const val = num(rows[r]?.[col]);
+            if (val !== 0) {
+              hasData = true;
+              depositosList.push({
+                id: crypto.randomUUID(),
+                monto: val,
+                referencia: "Monedas/Efectivo",
+              });
+            }
+          }
+
+          // Collect vouchers - Copiloto (R34-36 = rows 33-35)
           const vouchersList: ItemLista[] = [];
-          for (let r = 33; r <= 34; r++) {
+          for (let r = 33; r <= 35; r++) {
             const val = rows[r]?.[col];
             if (val !== null && val !== undefined && num(val) !== 0) {
               hasData = true;
@@ -645,44 +658,51 @@ export default function ImportarPage() {
             }
           }
 
-          // GASTOS DETALLADOS - FORMATO ESTANDARIZADO (Leer directamente de cada hoja)
+          // Gastos - inicializar con valores del RESUMEN DE GASTOS
+          const nombreNormalizado = nameStr.toUpperCase().replace(/\s+/g, " ");
+          const keyResumen = `${fechaDefault}_${nombreNormalizado}`;
+          const gastosDelResumen = gastosResumen.get(keyResumen);
+
           const gastosObj = {
-            // R41 = row 40: 3er Domingo
-            tercerDomingo: num(rows[40]?.[col]),
-            // R42 = row 41: 4to Domingo
-            cuartoDomingo: num(rows[41]?.[col]),
-            // R43 = row 42: Turno Extra
-            turnoExtra: num(rows[42]?.[col]),
-            // R44 = row 43: Hora Extra
-            horasExtras: num(rows[43]?.[col]),
-            // R46 = row 45: Combustible Enzo
-            bencinaEnzo: num(rows[45]?.[col]),
-            // R47 = row 46: Comisiones Promoción
-            comisionesPromocion: num(rows[46]?.[col]),
-            // R48 = row 47: Comisiones Lubricantes
-            comisionesLubricantes: num(rows[47]?.[col]),
-            // R49 = row 48: Perros Muertos
-            perrosMuertos: num(rows[48]?.[col]),
-            // Campos adicionales (no están en Excel estandarizado)
+            bencinaEnzo: gastosDelResumen?.bencinaEnzo || 0,
+            perrosMuertos: gastosDelResumen?.perrosMuertos || 0,
+            turnoExtra: gastosDelResumen?.turnoExtra || 0,
+            horasExtras: gastosDelResumen?.horasExtras || 0,
+            comisionesPromocion: 0,
+            comisionesLubricantes: 0,
+            tercerDomingo: gastosDelResumen?.tercerDomingo || 0,
+            cuartoDomingo: gastosDelResumen?.cuartoDomingo || 0,
             quintoDomingo: 0,
             valeEasyPay: 0,
             otros: 0,
           };
 
-          // Marcar hasData si hay gastos
-          const totalGastos = Object.values(gastosObj).reduce((a, b) => a + b, 0);
-          if (totalGastos > 0) hasData = true;
+          // Marcar hasData si hay gastos del resumen
+          if (gastosDelResumen) {
+            const totalGastosResumen = Object.values(gastosDelResumen).reduce((a, b) => a + b, 0);
+            if (totalGastosResumen > 0) hasData = true;
+          }
 
-          // R58 = row 57: Tarjetas
-          const tarjetas = num(rows[57]?.[col]);
+          // R41 = row 40: Comision A Y L (esta fila sí es confiable)
+          const comisionVal = num(rows[40]?.[col]);
+          if (comisionVal !== 0) {
+            gastosObj.comisionesPromocion = comisionVal;
+            hasData = true;
+          }
+
+          // R42-R44: Gastos variables - IGNORADOS porque no son confiables
+          // Los gastos importantes (turnos extras, domingos, etc.) vienen del RESUMEN DE GASTOS
+
+          // R50 = row 49: Tarjetas
+          const tarjetas = num(rows[49]?.[col]);
           if (tarjetas !== 0) hasData = true;
 
-          // R63 = row 62: VENTA
-          const venta = num(rows[62]?.[col]);
+          // R55 = row 54: VENTA
+          const venta = num(rows[54]?.[col]);
           if (venta !== 0) hasData = true;
 
-          // R64 = row 63: DIFERENCIA
-          const diferencia = num(rows[63]?.[col]);
+          // R56 = row 55: DIFERENCIA
+          const diferencia = num(rows[55]?.[col]);
 
           // Skip persons with no data
           if (!hasData) continue;
@@ -1238,7 +1258,44 @@ export default function ImportarPage() {
               )}
             </div>
 
-            <div className="flex gap-2 items-center">
+            {/* Tabla de duplicados */}
+            {mostrarDuplicados && turnosDuplicados.length > 0 && (
+              <div className="px-6 pb-4">
+                <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                  <h3 className="text-sm font-bold text-red-700 dark:text-red-400 mb-3">
+                    Turnos Duplicados {modoSobrescribir ? '(Se sobrescribirán)' : '(Omitidos)'}
+                  </h3>
+                  <div className="max-h-48 overflow-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-red-100 dark:bg-red-900/20">
+                        <tr className="text-left text-red-700 dark:text-red-400">
+                          <th className="p-2">Fecha</th>
+                          <th className="p-2">Turno</th>
+                          <th className="p-2">Responsable</th>
+                          <th className="p-2 text-right">Venta</th>
+                          <th className="p-2 text-right">Diferencia</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-red-200 dark:divide-red-800">
+                        {turnosDuplicados.map((t, i) => (
+                          <tr key={i} className="text-red-700 dark:text-red-400">
+                            <td className="p-2 font-mono">{t.fecha}</td>
+                            <td className="p-2 capitalize">{t.turno}</td>
+                            <td className="p-2">{t.responsable}</td>
+                            <td className="p-2 text-right">{t.total_ventas?.toLocaleString('es-CL')}</td>
+                            <td className="p-2 text-right">{t.diferencia?.toLocaleString('es-CL')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+              <div></div>
+              <div className="flex gap-2 items-center">
               <button
                 onClick={abrirModalEliminar}
                 disabled={importando}
@@ -1259,41 +1316,6 @@ export default function ImportarPage() {
               </button>
             </div>
           </div>
-
-          {/* Tabla de duplicados */}
-          {mostrarDuplicados && turnosDuplicados.length > 0 && (
-            <div className="px-6 pb-4">
-              <div className="bg-red-50 dark:bg-red-900/10 rounded-lg p-4 border border-red-200 dark:border-red-800">
-                <h3 className="text-sm font-bold text-red-700 dark:text-red-400 mb-3">
-                  Turnos Duplicados {modoSobrescribir ? '(Se sobrescribirán)' : '(Omitidos)'}
-                </h3>
-                <div className="max-h-48 overflow-auto">
-                  <table className="w-full text-xs">
-                    <thead className="bg-red-100 dark:bg-red-900/20">
-                      <tr className="text-left text-red-700 dark:text-red-400">
-                        <th className="p-2">Fecha</th>
-                        <th className="p-2">Turno</th>
-                        <th className="p-2">Responsable</th>
-                        <th className="p-2 text-right">Venta</th>
-                        <th className="p-2 text-right">Diferencia</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-red-200 dark:divide-red-800">
-                      {turnosDuplicados.map((t, i) => (
-                        <tr key={i} className="text-red-700 dark:text-red-400">
-                          <td className="p-2 font-mono">{t.fecha}</td>
-                          <td className="p-2 capitalize">{t.turno}</td>
-                          <td className="p-2">{t.responsable}</td>
-                          <td className="p-2 text-right">{t.total_ventas?.toLocaleString('es-CL')}</td>
-                          <td className="p-2 text-right">{t.diferencia?.toLocaleString('es-CL')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table className="w-full text-sm text-left">

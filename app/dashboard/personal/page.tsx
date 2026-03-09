@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import ConfirmModal from "@/components/ConfirmModal";
+import { validarRutConMensaje, limpiarRut } from "@/lib/validarRut";
 
 // Tipo de dato actualizado
 type Personal = {
@@ -107,7 +108,7 @@ export default function PersonalPage() {
 
     const dataToSave = {
       nombre: formData.nombre.trim(),
-      rut: formData.rut.replace(/\./g, "").replace(/-/g, "").toLowerCase().trim(),
+      rut: limpiarRut(formData.rut),
       correo: formData.correo.trim(),
       activo: formData.estado === 'activo',
       estado: formData.estado,
@@ -116,6 +117,15 @@ export default function PersonalPage() {
     };
 
     if (!dataToSave.nombre) { toast.warning("El nombre es obligatorio", "Ingresa el nombre completo del trabajador"); return; }
+
+    // Validar RUT si está presente
+    if (dataToSave.rut) {
+      const errorRut = validarRutConMensaje(dataToSave.rut);
+      if (errorRut) {
+        toast.error("RUT inválido", errorRut);
+        return;
+      }
+    }
 
     try {
       if (editingId) {

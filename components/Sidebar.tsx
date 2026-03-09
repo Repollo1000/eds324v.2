@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useUsuario } from "@/lib/useUsuario";
 
 interface SidebarProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ interface SidebarProps {
 export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { usuario } = useUsuario();
 
   const isActive = (path: string) => pathname === path;
 
@@ -99,15 +101,36 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <Link href="/dashboard/liquidaciones" className={linkClass("/dashboard/liquidaciones")} onClick={onClose}>
               📑 Liquidaciones
             </Link>
-            <Link href="/dashboard/importar" className={linkClass("/dashboard/importar")} onClick={onClose}>
-              📤 Importar Excel
-            </Link>
+            {usuario?.rol === 'administrador' && (
+              <>
+                <Link href="/dashboard/importar" className={linkClass("/dashboard/importar")} onClick={onClose}>
+                  📤 Importar Excel
+                </Link>
+                <Link href="/dashboard/auditoria" className={linkClass("/dashboard/auditoria")} onClick={onClose}>
+                  🔍 Auditoría
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
+      <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0 space-y-2">
+        {/* Enlace a Configuración */}
+        <Link
+          href="/dashboard/configuracion"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-sm font-medium"
+          onClick={onClose}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Configuración
+        </Link>
+
+        {/* Botón Cerrar Sesión */}
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"

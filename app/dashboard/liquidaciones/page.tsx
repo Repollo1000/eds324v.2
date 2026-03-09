@@ -63,7 +63,8 @@ export default function LiquidacionesPage() {
       const pdfDoc = await PDFDocument.load(fileBytes);
       const totalPaginas = pdfDoc.getPageCount();
       const nuevasHojas: any[] = [];
-      const rutRegex = /\b\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]\b/g;
+      // Regex mejorado: detecta RUTs chilenos de 6-9 dígitos (incluye RUTs antiguos)
+      const rutRegex = /\b\d{1,3}(?:\.?\d{3}){1,2}-?[0-9kK]\b/g;
 
       // Revoke previous Blob URLs to prevent memory leak
       prevUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
@@ -150,13 +151,15 @@ export default function LiquidacionesPage() {
         .upload(fileName, hoja.blob, { upsert: true });
       if (uploadError) throw uploadError;
 
-      // B. Guardar registro en Base de Datos
-      const { error: dbError } = await supabase.from("liquidaciones").insert({
+      // B. Guardar registro en Base de Datos (upsert para evitar duplicados)
+      const { error: dbError } = await supabase.from("liquidaciones").upsert({
         personal_id: trabajador.id,
         mes,
         anio,
         archivo_path: fileName,
         estado: 'enviado'
+      }, {
+        onConflict: 'personal_id,mes,anio'
       });
       if (dbError) throw dbError;
 

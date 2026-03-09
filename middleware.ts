@@ -34,6 +34,9 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Extraer rol del metadata
+  const rol = user?.user_metadata?.rol || 'supervisor';
+
   const { pathname } = request.nextUrl;
 
   // Protected API routes: return 401 if not authenticated
@@ -55,6 +58,15 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/login' && user) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // Validar acceso a rutas protegidas por rol
+  const RUTAS_ADMIN = ['/dashboard/importar', '/dashboard/auditoria', '/dashboard/tributario'];
+  if (RUTAS_ADMIN.some(r => pathname.startsWith(r)) && rol !== 'administrador') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    url.searchParams.set('error', 'sin_permisos');
     return NextResponse.redirect(url);
   }
 

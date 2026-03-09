@@ -285,11 +285,27 @@ export default function NuevaCuadraturaPage() {
                                 <MoneyInput value={gastos.horasExtras} onChange={(val) => handleGasto("horasExtras", val)} placeholder="0" className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" allowEmpty />
                             </div>
                         </div>
+
+                        {/* Domingos Extras - FORMATO ESTANDARIZADO */}
+                        <div className="col-span-2 grid grid-cols-3 gap-4 bg-rose-50 dark:bg-rose-900/10 p-3 rounded-lg border border-rose-200 dark:border-rose-900/20">
+                            <div>
+                                <label className="block text-xs font-bold text-rose-700 dark:text-rose-400 mb-1">3er Domingo</label>
+                                <MoneyInput value={gastos.tercerDomingo} onChange={(val) => handleGasto("tercerDomingo", val)} placeholder="0" className="w-full p-2 rounded border border-rose-300 dark:border-rose-900/30 text-right font-bold" allowEmpty />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-rose-700 dark:text-rose-400 mb-1">4to Domingo</label>
+                                <MoneyInput value={gastos.cuartoDomingo} onChange={(val) => handleGasto("cuartoDomingo", val)} placeholder="0" className="w-full p-2 rounded border border-rose-300 dark:border-rose-900/30 text-right font-bold" allowEmpty />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-rose-700 dark:text-rose-400 mb-1">5to Domingo</label>
+                                <MoneyInput value={gastos.quintoDomingo} onChange={(val) => handleGasto("quintoDomingo", val)} placeholder="0" className="w-full p-2 rounded border border-rose-300 dark:border-rose-900/30 text-right font-bold" allowEmpty />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Otros Gastos Dinámicos */}
                     <div className="grid grid-cols-2 gap-3 pt-2">
-                        {Object.keys(gastos).filter(k => !['comisionesPromocion', 'comisionesLubricantes','perrosMuertos','bencinaEnzo','turnoExtra', 'horasExtras'].includes(k)).map((key) => (
+                        {Object.keys(gastos).filter(k => !['comisionesPromocion', 'comisionesLubricantes','perrosMuertos','bencinaEnzo','turnoExtra', 'horasExtras','tercerDomingo','cuartoDomingo','quintoDomingo'].includes(k)).map((key) => (
                             <div key={key}>
                                 <label className="block text-xs font-medium text-zinc-500 capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
                                 <MoneyInput value={gastos[key as keyof typeof gastos]} onChange={(val) => handleGasto(key, val)} placeholder="0" className="w-full p-2 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700 text-right" allowEmpty />
@@ -300,10 +316,20 @@ export default function NuevaCuadraturaPage() {
             </div>
         </div>
 
-        {/* 4. VENTAS TOTALES */}
+        {/* 4. TARJETAS */}
         <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-             <h2 className="text-xs font-bold text-teal-600 uppercase mb-4">4. Ventas Totales</h2>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-xs font-bold text-indigo-600 uppercase mb-4">4. Tarjetas (Transbank)</h2>
+          <MoneyInput
+            value={totalTarjetas}
+            onChange={(val) => setTotalTarjetas(val || "")}
+            placeholder="$ 0"
+            className="w-full p-3 text-lg font-bold rounded border border-zinc-300 focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900 dark:border-zinc-700"
+            allowEmpty
+          />
+        </div>
+        {/* 5. VENTAS TOTALES */}
+        <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+             <h2 className="text-xs font-bold text-teal-600 uppercase mb-4">5. Ventas Totales</h2>
                <div>
                   <label className="block text-sm font-medium mb-1">Venta Combustibles</label>
                   <MoneyInput
@@ -314,30 +340,8 @@ export default function NuevaCuadraturaPage() {
                     allowEmpty
                   />
                </div>
-               <div>
-                  <label className="block text-sm font-medium mb-1">Venta Tienda</label>
-                  <MoneyInput
-                    value={ventaTienda}
-                    onChange={(val) => setVentaTienda(val || "")}
-                    placeholder="$ 0"
-                    className="w-full text-lg font-bold p-3 rounded border border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700"
-                    allowEmpty
-                  />
-               </div>
-             </div>
         </div>
 
-        {/* 5. TARJETAS */}
-        <div className="bg-white dark:bg-zinc-950 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-          <h2 className="text-xs font-bold text-indigo-600 uppercase mb-4">5. Tarjetas (Transbank)</h2>
-          <MoneyInput
-            value={totalTarjetas}
-            onChange={(val) => setTotalTarjetas(val || "")}
-            placeholder="$ 0"
-            className="w-full p-3 text-lg font-bold rounded border border-zinc-300 focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900 dark:border-zinc-700"
-            allowEmpty
-          />
-        </div>
 
         {/* BARRA INFERIOR (FOOTER STICKY) */}
         <div className="sticky bottom-0 z-20 bg-white dark:bg-black border-t border-zinc-200 dark:border-zinc-800 p-4 shadow-xl -mx-4 -mb-4 md:-mx-8 md:-mb-8 mt-6">
